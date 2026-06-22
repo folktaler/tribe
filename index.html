@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tribe — Member Management</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#30cf43">
+<link rel="apple-touch-icon" href="tribe-icon.svg">
+<link rel="icon" href="tribe-icon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -2772,6 +2776,13 @@ window.addEventListener("offline", ()=>{
 
 renderAll();
 sbInit();   // silently reconnect cloud sync if set up on this device
+
+// PWA: cache the app shell so the hosted site loads instantly & works offline.
+// Only on the deployed site (served as index.html at its own scope) — skips file:// and the
+// local toolkit server (…/tribe.html) so it never collides with Scribe's service worker.
+if("serviceWorker" in navigator && location.protocol.startsWith("http") && !location.pathname.endsWith("tribe.html")){
+  window.addEventListener("load", ()=> navigator.serviceWorker.register("service-worker.js").catch(()=>{}));
+}
 </script>
 </body>
 </html>
