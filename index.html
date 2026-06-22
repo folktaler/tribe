@@ -1,0 +1,2777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tribe — Member Management</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --ink: #15171a;          /* primary text */
+    --ink-2: #394047;        /* strong secondary */
+    --grey: #7c8b9a;         /* secondary text */
+    --grey-2: #aeb7c1;       /* tertiary */
+    --line: #e3e6ea;         /* borders */
+    --line-soft: #eef0f2;
+    --bg: #f5f6f7;           /* page bg */
+    --card: #ffffff;
+    --accent: #30cf43;       /* Ghost membership green */
+    --accent-ink: #16a34a;
+    --blue: #3b82f6;
+    --radius: 10px;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 18px rgba(0,0,0,0.10);
+    --shadow-lg: 0 8px 40px rgba(0,0,0,0.16);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body { height: 100%; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  button { font-family: inherit; cursor: pointer; }
+  input, select, textarea { font-family: inherit; font-size: 14px; }
+
+  /* ── Layout ── */
+  .app { max-width: 1080px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ── Top bar ── */
+  .topbar {
+    display: flex; align-items: center; gap: 14px;
+    padding: 26px 0 18px;
+  }
+  .logo {
+    width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+    background: linear-gradient(135deg, #167c2e, #30cf43);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; box-shadow: var(--shadow-sm);
+  }
+  .brand h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.3px; }
+  .brand p { font-size: 0.78rem; color: var(--grey-2); }
+  .topbar .spacer { flex: 1; }
+
+  .iconbtn {
+    width: 36px; height: 36px; border-radius: 8px;
+    border: 1px solid var(--line); background: var(--card);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--grey); font-size: 1rem; transition: all .12s;
+  }
+  .iconbtn:hover { color: var(--ink); border-color: var(--grey-2); }
+  .cloud-btn { position: relative; }
+  .acct-btn { position: relative; display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 13px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--ink-2); font-size: 0.85rem; font-weight: 600; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: border-color .12s, background .12s; }
+  .acct-btn:hover { border-color: var(--grey-2); }
+  .acct-btn.signed-in { padding: 0 12px 0 5px; }
+  .acct-ava { width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.74rem; font-weight: 700; }
+  .acct-btn .sync-dot { top: 3px; right: 3px; }
+  .sync-dot { position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 0 2px var(--card); }
+  .sync-dot.ok { background: var(--accent); }
+  .sync-dot.syncing { background: #ca8a04; animation: aipulse 1s ease-in-out infinite; }
+  .sync-dot.fail { background: #dc2626; }
+  .sync-dot.pending { background: var(--grey-2); }
+  .sync-dot.hide { display: none; }
+
+  /* ── Stat cards ── */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 14px; margin-bottom: 22px; }
+  .stat {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 16px 18px; box-shadow: var(--shadow-sm);
+  }
+  .stat .label { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--grey); margin-bottom: 6px; }
+  .stat .value { font-size: 1.7rem; font-weight: 700; letter-spacing: -0.5px; }
+  .stat .sub { font-size: 0.74rem; color: var(--grey-2); margin-top: 2px; }
+  .stat.click { cursor: pointer; transition: border-color .12s, transform .12s; }
+  .stat.click:hover { border-color: var(--accent); transform: translateY(-1px); }
+
+  /* ── Tabs ── */
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 18px; }
+  .tab {
+    background: none; border: none; padding: 10px 14px; font-size: 0.9rem; font-weight: 500;
+    color: var(--grey); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .12s;
+  }
+  .tab:hover { color: var(--ink-2); }
+  .tab.active { color: var(--ink); border-bottom-color: var(--ink); font-weight: 600; }
+  .tab .count { font-size: 0.72rem; color: var(--grey-2); margin-left: 5px; font-weight: 500; }
+
+  /* ── Toolbar ── */
+  .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+  .search {
+    flex: 1; min-width: 180px; position: relative;
+  }
+  .search input {
+    width: 100%; padding: 9px 12px 9px 34px; border: 1px solid var(--line); border-radius: 8px;
+    background: var(--card); color: var(--ink); outline: none; transition: border-color .12s;
+  }
+  .search input:focus { border-color: var(--grey-2); }
+  .search svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--grey-2); }
+  select.filter {
+    padding: 9px 30px 9px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--card);
+    color: var(--ink-2); outline: none; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237c8b9a' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center;
+  }
+
+  .btn {
+    padding: 9px 16px; border-radius: 8px; border: 1px solid transparent; font-size: 0.88rem; font-weight: 600;
+    background: var(--ink); color: #fff; transition: opacity .12s, background .12s; white-space: nowrap;
+  }
+  .btn:hover { background: #000; }
+  .btn.ghost { background: var(--card); color: var(--ink-2); border-color: var(--line); }
+  .btn.ghost:hover { background: #fafbfc; border-color: var(--grey-2); }
+  .btn.sm { padding: 6px 11px; font-size: 0.8rem; }
+  .btn.danger { background: #fff; color: #dc2626; border-color: #f3c9c9; }
+  .btn.danger:hover { background: #fef2f2; }
+
+  /* ── Table ── */
+  .table-wrap { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
+  .list-filter { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #fafbfc; border-bottom: 1px solid var(--line); font-size: 0.82rem; color: var(--grey); }
+  .list-filter .lf-clear { margin-left: auto; border: 1px solid var(--line); background: var(--card); border-radius: 6px; padding: 4px 10px; font-size: 0.76rem; color: var(--ink-2); cursor: pointer; }
+  .list-filter .lf-clear:hover { border-color: var(--grey-2); }
+  .next-cell { white-space: nowrap; }
+  .sig { font-size: 0.8rem; font-weight: 500; white-space: nowrap; }
+  .sig.none { color: var(--grey-2); }
+  .sig.cold { color: #b45309; }
+  .sig.urgent { color: var(--accent-ink); font-weight: 600; }
+  .sig.soon { color: var(--ink-2); }
+  .sig.far { color: var(--grey); }
+  .btn.ghost.active { border-color: var(--accent); color: var(--accent-ink); background: #f3fdf4; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    text-align: left; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--grey); padding: 12px 16px; border-bottom: 1px solid var(--line); background: #fafbfc; user-select: none;
+  }
+  thead th.sortable { cursor: pointer; }
+  thead th.sortable:hover { color: var(--ink-2); }
+  thead th .arrow { font-size: 0.6rem; margin-left: 3px; color: var(--grey-2); }
+  tbody tr { border-bottom: 1px solid var(--line-soft); cursor: pointer; transition: background .1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #fafbfc; }
+  tbody td { padding: 11px 16px; vertical-align: middle; color: var(--ink-2); }
+
+  .member-cell { display: flex; align-items: center; gap: 11px; }
+  .avatar {
+    width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 600; font-size: 0.78rem; letter-spacing: 0.02em;
+  }
+  .member-name { font-weight: 600; color: var(--ink); }
+  .member-email { font-size: 0.8rem; color: var(--grey); }
+
+  .pill {
+    display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 0.72rem; font-weight: 500;
+    background: #eef2f6; color: var(--ink-2); margin: 1px 2px 1px 0;
+  }
+  .pill.accent { background: #e7f9ea; color: var(--accent-ink); }
+
+  .empty {
+    text-align: center; padding: 64px 20px; color: var(--grey);
+  }
+  .empty .big { font-size: 2.4rem; margin-bottom: 10px; }
+  .empty h3 { font-size: 1.05rem; color: var(--ink-2); font-weight: 600; margin-bottom: 6px; }
+  .empty p { font-size: 0.86rem; margin-bottom: 18px; }
+
+  /* ── Upcoming list ── */
+  .up-list { display: flex; flex-direction: column; gap: 10px; }
+  .up-card {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 14px 16px; display: flex; align-items: center; gap: 14px; box-shadow: var(--shadow-sm); cursor: pointer;
+    transition: border-color .12s;
+  }
+  .up-card:hover { border-color: var(--accent); }
+  .up-when {
+    width: 64px; text-align: center; flex-shrink: 0;
+  }
+  .up-when .days { font-size: 1.3rem; font-weight: 700; color: var(--accent-ink); line-height: 1; }
+  .up-when .unit { font-size: 0.66rem; color: var(--grey); text-transform: uppercase; letter-spacing: 0.05em; }
+  .up-main { flex: 1; }
+  .up-main .who { font-weight: 600; color: var(--ink); }
+  .up-main .what { font-size: 0.8rem; color: var(--grey); }
+  .up-date { text-align: right; font-size: 0.82rem; color: var(--ink-2); }
+  .up-date .age { font-size: 0.72rem; color: var(--grey-2); }
+
+  /* ── Inbox (capture) ── */
+  .inbox-paste { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; box-shadow: var(--shadow-sm); margin-bottom: 18px; }
+  .inbox-paste.drag { border-color: var(--accent); background: #f6fdf7; }
+  .inbox-paste textarea { width: 100%; min-height: 120px; border: none; outline: none; resize: vertical; font-family: inherit; font-size: 0.9rem; line-height: 1.5; color: var(--ink); background: transparent; }
+  .inbox-bar { display: flex; align-items: center; gap: 10px; padding-top: 10px; border-top: 1px solid var(--line-soft); flex-wrap: wrap; }
+  .inbox-bar .grow { flex: 1; }
+  .inbox-status { font-size: 0.78rem; color: var(--grey); }
+  #btnInboxAI.ai-on { background: #f3fdf4; color: var(--accent-ink); border-color: #bfe6cd; }
+  #aiModelSel { padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--ink-2); font-size: 0.8rem; outline: none; cursor: pointer; max-width: 160px; }
+  #aiModelSel:hover { border-color: var(--grey-2); }
+  .ix-section-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--grey); margin: 0 0 12px; }
+  .ix-list { display: flex; flex-direction: column; gap: 12px; }
+  .ix-card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; box-shadow: var(--shadow-sm); }
+  .ix-card.newc { border-style: dashed; }
+  .ix-head { display: flex; align-items: center; gap: 11px; margin-bottom: 12px; }
+  .ix-head .who { font-weight: 600; color: var(--ink); }
+  .ix-head .reason { font-size: 0.72rem; color: var(--accent-ink); background: #e7f9ea; padding: 2px 8px; border-radius: 20px; }
+  .ix-row { display: flex; align-items: flex-start; gap: 9px; margin-bottom: 8px; }
+  .ix-row input[type=checkbox] { margin-top: 3px; flex-shrink: 0; }
+  .ix-row label { font-size: 0.84rem; color: var(--ink-2); font-weight: 500; }
+  .ix-row .ix-field { flex: 1; }
+  .ix-card textarea { width: 100%; min-height: 56px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 7px; outline: none; resize: vertical; font-size: 0.84rem; color: var(--ink); margin-top: 6px; }
+  .ix-card textarea:focus, .ix-card input:focus { border-color: var(--grey-2); }
+  .ix-card input[type=date], .ix-card input[type=text] { padding: 7px 9px; border: 1px solid var(--line); border-radius: 7px; outline: none; font-size: 0.83rem; color: var(--ink); margin-top: 6px; }
+  .ix-apply-bar { display: flex; align-items: center; gap: 10px; margin-top: 16px; }
+  .ix-assign { display: flex; align-items: center; gap: 8px; font-size: 0.84rem; color: var(--grey); margin-bottom: 14px; }
+  .ix-assign select { padding: 7px 9px; border: 1px solid var(--line); border-radius: 7px; outline: none; background: var(--card); color: var(--ink); }
+
+  /* ── Backup banner ── */
+  .backup-banner {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 18px;
+    background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--radius);
+    padding: 10px 14px; font-size: 0.85rem; color: #92651a;
+  }
+  .backup-banner .bb-icon { font-size: 1rem; }
+  .backup-banner .bb-msg { color: #92651a; }
+  .backup-banner .grow { flex: 1; }
+  .backup-banner .btn.sm { background: #ca8a04; }
+  .backup-banner .btn.sm:hover { background: #a16207; }
+  .backup-banner .bb-x { border: none; background: none; color: #b78a3a; font-size: 0.9rem; cursor: pointer; padding: 4px; }
+  .backup-banner .bb-x:hover { color: #92651a; }
+
+  /* ── CSV import ── */
+  .csv-drop {
+    border: 2px dashed var(--line); border-radius: 12px; padding: 32px 20px; text-align: center;
+    color: var(--grey); cursor: pointer; transition: border-color .12s, background .12s;
+  }
+  .csv-drop:hover, .csv-drop.drag { border-color: var(--accent); background: #f6fdf7; }
+  .csv-drop .big { font-size: 2rem; margin-bottom: 6px; }
+  .csv-drop p { font-size: 0.88rem; }
+  .csv-opts { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--line-soft); }
+  .csv-dateorder { font-size: 0.82rem; color: var(--ink-2); display: flex; align-items: center; gap: 8px; }
+  .csv-dateorder select { padding: 6px 8px; border: 1px solid var(--line); border-radius: 7px; outline: none; }
+  .csv-maptable { display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; }
+  .csv-maprow { display: grid; grid-template-columns: 1fr 16px 150px; gap: 10px; align-items: center; }
+  .csv-maprow .src { min-width: 0; }
+  .csv-maprow .src .h { font-weight: 600; color: var(--ink); font-size: 0.84rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .csv-maprow .src .sample { font-size: 0.74rem; color: var(--grey-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .csv-maprow .arrow { color: var(--grey-2); text-align: center; }
+  .csv-maprow select { padding: 7px 8px; border: 1px solid var(--line); border-radius: 7px; outline: none; font-size: 0.82rem; background: var(--card); }
+  .csv-maprow select.ignored { color: var(--grey-2); }
+
+  /* ── Outreach ── */
+  .out-section { margin-bottom: 26px; }
+  .out-section > .sec-head { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--grey); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .out-section > .sec-head .n { background: var(--ink); color: #fff; border-radius: 20px; padding: 1px 8px; font-size: 0.7rem; }
+  .out-section.today > .sec-head .n { background: var(--accent-ink); }
+  .out-list { display: flex; flex-direction: column; gap: 12px; }
+  .out-card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 16px; box-shadow: var(--shadow-sm); transition: border-color .12s;
+  }
+  .out-card.today { border-left: 3px solid var(--accent); }
+  .out-card.done { opacity: 0.5; }
+  .out-top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .out-who { display: flex; align-items: center; gap: 12px; cursor: pointer; border-radius: 8px; min-width: 0; }
+  .out-who:hover .who { text-decoration: underline; }
+  .out-whotext { min-width: 0; }
+  .out-top .who { font-weight: 600; color: var(--ink); }
+  .out-top .why { font-size: 0.8rem; color: var(--grey); }
+  .out-top .when-pill { margin-left: auto; font-size: 0.72rem; font-weight: 600; padding: 3px 10px; border-radius: 20px; background: #eef2f6; color: var(--ink-2); white-space: nowrap; }
+  .out-card.today .when-pill { background: #e7f9ea; color: var(--accent-ink); }
+  .out-context { font-size: 0.8rem; color: var(--accent-ink); background: #f3fdf4; border: 1px solid #d6f0db; border-radius: 8px; padding: 7px 11px; margin-bottom: 10px; line-height: 1.45; }
+  .out-draft { margin-bottom: 12px; }
+  .btn.ai-draft { background: #f5f3ff; color: #6d28d9; border-color: #ddd6fe; }
+  .btn.ai-draft:hover { background: #ede9fe; }
+  .btn.ai-draft[disabled] { opacity: 0.6; pointer-events: none; }
+  .out-draft .subj { width: 100%; padding: 7px 10px; border: 1px solid var(--line); border-radius: 7px; margin-bottom: 6px; outline: none; font-size: 0.84rem; color: var(--ink); }
+  .out-draft .subj:focus, .out-draft textarea:focus { border-color: var(--grey-2); }
+  .out-draft .subj .lbl { color: var(--grey-2); }
+  .out-draft textarea { width: 100%; min-height: 64px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px; outline: none; resize: vertical; color: var(--ink); font-size: 0.88rem; line-height: 1.5; background: #fcfcfd; }
+  .out-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .out-actions .grow { flex: 1; }
+  .btn.email { background: #fff; color: #c2410c; border-color: #f1d4c4; }
+  .btn.email:hover { background: #fff7ed; }
+  .btn.wa { background: #fff; color: #128c4a; border-color: #bfe6cd; }
+  .btn.wa:hover { background: #f0fdf4; }
+  .btn.email[disabled], .btn.wa[disabled] { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+  .btn.skip-btn { background: transparent; border-color: transparent; color: var(--grey-2); }
+  .btn.skip-btn:hover { color: var(--grey); background: #f1f5f9; }
+  .btn.done { background: var(--ink); color: #fff; }
+  .btn.skip { background: none; border: none; color: var(--grey-2); font-size: 0.8rem; padding: 6px 8px; }
+  .btn.skip:hover { color: var(--grey); }
+
+  /* ── Cloud backup ── */
+  .gh-warn { font-size: 0.78rem; line-height: 1.5; color: #92651a; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 12px; }
+  .gh-warn a { color: #a16207; }
+
+  /* ── Templates editor ── */
+  .tpl-item { border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin-bottom: 10px; }
+  .tpl-item .tpl-row1 { display: flex; gap: 8px; margin-bottom: 8px; }
+  .tpl-item input, .tpl-item textarea { width: 100%; padding: 7px 9px; border: 1px solid var(--line); border-radius: 7px; outline: none; font-size: 0.84rem; color: var(--ink); }
+  .tpl-item input:focus, .tpl-item textarea:focus { border-color: var(--grey-2); }
+  .tpl-item .tpl-name { font-weight: 600; }
+  .tpl-item .tpl-applies { max-width: 150px; }
+  .tpl-item textarea { resize: vertical; min-height: 52px; margin-top: 6px; }
+  .tpl-item .tpl-del { border: none; background: none; color: var(--grey-2); cursor: pointer; padding: 0 6px; font-size: 0.9rem; }
+  .tpl-item .tpl-del:hover { color: #dc2626; }
+  .tpl-voice-head { display: flex; align-items: baseline; gap: 8px; }
+  .tpl-voice-head strong { font-size: 0.9rem; color: var(--ink); }
+
+  /* ── Fields manager ── */
+  .fields-list { display: flex; flex-direction: column; gap: 8px; }
+  .field-row {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 12px 14px; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow-sm);
+  }
+  .field-row .ftype {
+    font-size: 0.68rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 6px; background: #eef2f6; color: var(--grey); flex-shrink: 0; min-width: 70px; text-align: center;
+  }
+  .field-row .flabel { font-weight: 600; color: var(--ink); }
+  .field-row .fmeta { font-size: 0.76rem; color: var(--grey-2); }
+  .field-row .spacer { flex: 1; }
+  .field-row .badge-sys { font-size: 0.68rem; color: var(--grey-2); font-style: italic; }
+
+  /* ── Drawer ── */
+  .scrim {
+    position: fixed; inset: 0; background: rgba(20,23,26,0.4); opacity: 0; pointer-events: none;
+    transition: opacity .2s; z-index: 40;
+  }
+  .scrim.open { opacity: 1; pointer-events: auto; }
+  .drawer {
+    position: fixed; top: 0; right: 0; height: 100%; width: 460px; max-width: 92vw;
+    background: var(--card); box-shadow: var(--shadow-lg); z-index: 50;
+    transform: translateX(100%); transition: transform .24s cubic-bezier(.4,0,.2,1);
+    display: flex; flex-direction: column;
+  }
+  .drawer.open { transform: translateX(0); }
+  .drawer-head { padding: 20px 24px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 12px; }
+  .drawer-head .avatar { width: 44px; height: 44px; font-size: 0.95rem; }
+  .drawer-head .htitle { flex: 1; min-width: 0; }
+  .drawer-head .htitle h2 { font-size: 1.05rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .drawer-head .htitle p { font-size: 0.8rem; color: var(--grey); }
+  .drawer-body { flex: 1; overflow-y: auto; padding: 20px 24px; }
+  .drawer-foot { padding: 14px 24px; border-top: 1px solid var(--line); display: flex; gap: 10px; align-items: center; }
+  .drawer-foot .spacer { flex: 1; }
+
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--ink-2); margin-bottom: 6px; }
+  .form-group .hint { font-size: 0.72rem; color: var(--grey-2); font-weight: 400; }
+  .form-group input[type=text], .form-group input[type=email], .form-group input[type=url],
+  .form-group input[type=password],
+  .form-group input[type=number], .form-group input[type=date], .form-group select, .form-group textarea {
+    width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px; background: var(--card);
+    color: var(--ink); outline: none; transition: border-color .12s;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--grey-2); }
+  .form-group textarea { min-height: 72px; resize: vertical; }
+  .form-group.inline-check { display: flex; align-items: center; gap: 8px; }
+  .form-group.inline-check input { width: auto; }
+  .form-group.inline-check label { margin: 0; }
+
+  .toggle, .form-group label.toggle { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; margin-bottom: 0; }
+  .toggle input { display: none; }
+  .toggle .track { width: 36px; height: 20px; border-radius: 20px; background: var(--line); position: relative; transition: background .15s; }
+  .toggle .track::after { content:''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .15s; box-shadow: var(--shadow-sm); }
+  .toggle input:checked + .track { background: var(--accent); }
+  .toggle input:checked + .track::after { transform: translateX(16px); }
+  .toggle .tlabel { font-size: 0.82rem; color: var(--ink-2); }
+
+  /* tags input */
+  .tags-input { display: flex; flex-wrap: wrap; gap: 6px; padding: 7px 8px; border: 1px solid var(--line); border-radius: 8px; }
+  .tags-input:focus-within { border-color: var(--grey-2); }
+  .tags-input .tag { display: inline-flex; align-items: center; gap: 5px; background: #eef2f6; color: var(--ink-2); padding: 2px 4px 2px 9px; border-radius: 20px; font-size: 0.76rem; }
+  .tags-input .tag button { border: none; background: none; color: var(--grey); font-size: 0.9rem; line-height: 1; padding: 0 2px; }
+  .tags-input input { border: none; outline: none; flex: 1; min-width: 80px; padding: 3px; }
+
+  /* date list (repeatable dates) */
+  .datelist .dl-rows { display: flex; flex-direction: column; gap: 7px; margin-bottom: 8px; }
+  .dl-row { display: grid; grid-template-columns: 1fr 130px 118px 26px; gap: 6px; align-items: center; }
+  .dl-row input, .dl-row select { width: 100%; padding: 7px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--card); color: var(--ink); outline: none; }
+  .dl-row input:focus, .dl-row select:focus { border-color: var(--grey-2); }
+  .dl-row .dl-rm { border: none; background: none; color: var(--grey-2); font-size: 0.9rem; padding: 0; cursor: pointer; }
+  .dl-row .dl-rm:hover { color: #dc2626; }
+  @media (max-width: 520px) {
+    .dl-row { grid-template-columns: 1fr 1fr; grid-auto-rows: auto; }
+    .dl-row .dl-rm { grid-column: 2; justify-self: end; }
+  }
+
+  /* ── Drawer detail tabs ── */
+  .drawer-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin: -4px 0 18px; }
+  .drawer-tabs .dtab { background: none; border: none; padding: 8px 12px; font-size: 0.86rem; font-weight: 500; color: var(--grey); border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer; }
+  .drawer-tabs .dtab:hover { color: var(--ink-2); }
+  .drawer-tabs .dtab.active { color: var(--ink); border-bottom-color: var(--ink); font-weight: 600; }
+  .drawer-tabs .dtab-n { font-size: 0.72rem; color: var(--grey-2); margin-left: 4px; }
+
+  /* ── Activity / interaction log (drawer) ── */
+  .activity .last-contact { font-size: 0.82rem; color: var(--grey); margin-bottom: 14px; }
+  .act-add { display: grid; grid-template-columns: 116px 1fr auto; gap: 6px; margin-bottom: 14px; align-items: center; }
+  .act-add select, .act-add input[type=text] { padding: 7px 9px; border: 1px solid var(--line); border-radius: 7px; outline: none; font-size: 0.83rem; background: var(--card); color: var(--ink); width: 100%; }
+  .act-add select:focus, .act-add input:focus { border-color: var(--grey-2); }
+  .act-add .act-add-btn { padding: 7px 12px; border-radius: 7px; border: 1px solid var(--line); background: var(--ink); color: #fff; font-size: 0.82rem; font-weight: 600; white-space: nowrap; }
+  .act-add .act-add-btn:hover { background:#000; }
+  .act-add-date { grid-column: 1 / -1; }
+  .act-add-date input[type=date] { padding: 6px 9px; border: 1px solid var(--line); border-radius: 7px; outline: none; font-size: 0.8rem; color: var(--grey); background: var(--card); }
+  .act-list { display: flex; flex-direction: column; }
+  .act-empty { font-size: 0.82rem; color: var(--grey-2); padding: 4px 0 8px; }
+  .act-row { display: flex; gap: 11px; padding: 9px 0; border-bottom: 1px solid var(--line-soft); position: relative; }
+  .act-row:last-child { border-bottom: none; }
+  .act-row .act-ico { width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%; background: #eef2f6; display: flex; align-items: center; justify-content: center; font-size: 0.82rem; }
+  .act-row .act-body { flex: 1; min-width: 0; }
+  .act-row .act-primary { font-size: 0.86rem; color: var(--ink); }
+  .act-row .act-meta { font-size: 0.74rem; color: var(--grey-2); margin-top: 1px; }
+  .act-row .act-del { border: none; background: none; color: var(--grey-2); cursor: pointer; font-size: 0.82rem; opacity: 0; transition: opacity .1s; padding: 0 2px; align-self: center; }
+  .act-row:hover .act-del { opacity: 1; }
+  .act-row .act-del:hover { color: #dc2626; }
+
+  /* ── Modal ── */
+  .modal-scrim { position: fixed; inset: 0; background: rgba(20,23,26,0.4); display: none; align-items: center; justify-content: center; z-index: 60; padding: 20px; }
+  .modal-scrim.open { display: flex; }
+  .modal { background: var(--card); border-radius: 14px; box-shadow: var(--shadow-lg); width: 440px; max-width: 100%; max-height: 90vh; overflow-y: auto; }
+  .modal-head { padding: 20px 24px 0; }
+  .modal-head h2 { font-size: 1.1rem; font-weight: 700; }
+  .modal-head p { font-size: 0.82rem; color: var(--grey); margin-top: 3px; }
+  .modal-body { padding: 18px 24px; }
+  .modal-foot { padding: 14px 24px; border-top: 1px solid var(--line); display: flex; gap: 10px; justify-content: flex-end; }
+
+  /* type picker grid */
+  .type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .type-opt {
+    border: 1px solid var(--line); border-radius: 8px; padding: 10px 6px; text-align: center; background: var(--card);
+    transition: all .12s; font-size: 0.74rem; color: var(--ink-2);
+  }
+  .type-opt:hover { border-color: var(--grey-2); }
+  .type-opt.sel { border-color: var(--accent); background: #f3fdf4; color: var(--accent-ink); font-weight: 600; }
+  .type-opt .ico { font-size: 1.1rem; display: block; margin-bottom: 3px; }
+
+  .ai-badge {
+    display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px;
+    border: 1px solid #bfe6cd; background: #f3fdf4; color: var(--accent-ink);
+    border-radius: 20px; font-size: 0.78rem; font-weight: 600; cursor: pointer;
+    max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background .12s;
+  }
+  .ai-badge:hover { background: #e7f9ea; }
+  .ai-badge .ai-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+  .ai-badge .ai-dot.loading { background: #ca8a04; animation: aipulse 1s ease-in-out infinite; }
+  @keyframes aipulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--ink); color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 0.85rem;
+    box-shadow: var(--shadow-md); opacity: 0; pointer-events: none; transition: all .2s; z-index: 80;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .hide { display: none !important; }
+
+  @media (max-width: 640px) {
+    .member-email { display: none; }
+    thead th.hide-sm, tbody td.hide-sm { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="logo">🪢</div>
+    <div class="brand">
+      <h1>Tribe</h1>
+      <p>Your people, organised</p>
+    </div>
+    <div class="spacer"></div>
+    <button class="ai-badge hide" id="aiBadge" title="Local AI is active — click to manage"></button>
+    <button class="acct-btn" id="btnSb" title="Sign in"><span class="acct-ava hide" id="acctAva"></span><span id="acctLabel">Sign in</span><span class="sync-dot hide" id="sbDot"></span></button>
+    <button class="iconbtn" id="btnExport" title="Download a local copy (JSON)">⤓</button>
+    <button class="iconbtn" id="btnImport" title="Restore from backup (JSON)">⤒</button>
+    <input type="file" id="fileImport" accept="application/json" class="hide">
+  </div>
+
+  <!-- Backup nudge -->
+  <div class="backup-banner hide" id="backupBanner">
+    <span class="bb-icon">⚠️</span>
+    <span id="backupMsg" class="bb-msg"></span>
+    <span class="grow"></span>
+    <button class="btn sm" id="btnBackupNow">Back up now</button>
+    <button class="bb-x" id="btnBackupDismiss" title="Dismiss">✕</button>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats" id="stats"></div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" data-tab="outreach">Outreach <span class="count" id="cOutreach"></span></button>
+    <button class="tab" data-tab="inbox">Inbox</button>
+    <button class="tab" data-tab="members">Members <span class="count" id="cMembers"></span></button>
+    <button class="tab" data-tab="upcoming">Upcoming <span class="count" id="cUpcoming"></span></button>
+    <button class="tab" data-tab="fields">Fields <span class="count" id="cFields"></span></button>
+  </div>
+
+  <!-- ── Outreach tab ── -->
+  <div id="tab-outreach">
+    <div class="toolbar">
+      <div style="font-size:0.84rem;color:var(--grey);flex:1">Ready-to-send notes for who matters today. Review, tweak, then send.</div>
+      <button class="btn ghost sm" id="btnPlanWeek">✨ Plan my week</button>
+      <button class="btn ghost sm" id="btnTemplates">✎ Templates</button>
+    </div>
+    <div id="outreachWrap"></div>
+  </div>
+
+  <!-- ── Inbox tab ── -->
+  <div id="tab-inbox" class="hide">
+    <div class="toolbar">
+      <div style="font-size:0.84rem;color:var(--grey);flex:1">Paste a reply, email, or a screenshot. Tribe finds who it's about and suggests what to log — you approve.</div>
+    </div>
+    <div class="inbox-paste" id="inboxPaste">
+      <textarea id="inboxText" placeholder="Paste copied text here — or paste / drop a screenshot to read it…"></textarea>
+      <div class="inbox-bar">
+        <button class="btn ghost sm" id="btnInboxImg">🖼 Choose screenshot</button>
+        <input type="file" id="inboxFile" accept="image/*" class="hide">
+        <button class="btn ghost sm" id="btnInboxAI" title="Use your local Ollama model to clean up & summarise">✨ Use local AI</button>
+        <button class="btn ghost sm hide" id="btnInboxAIWeb" title="Download a model into the browser instead (~1.5GB)">↓ In-browser model instead</button>
+        <select id="aiModelSel" class="hide" title="Which Ollama model to use"></select>
+        <span class="inbox-status" id="inboxStatus"></span>
+        <span class="grow"></span>
+        <button class="btn ghost sm" id="btnInboxClear">Clear</button>
+        <button class="btn" id="btnInboxScan">Find actions →</button>
+      </div>
+    </div>
+    <div id="inboxOut"></div>
+  </div>
+
+  <!-- ── Members tab ── -->
+  <div id="tab-members" class="hide">
+    <div class="toolbar">
+      <div class="search">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" id="searchInput" placeholder="Search members…">
+      </div>
+      <select class="filter" id="labelFilter"><option value="">All labels</option></select>
+      <button class="btn ghost" id="btnNeedsAttn" title="Show only people with something due or gone quiet">⚡ Needs attention</button>
+      <button class="btn ghost" id="btnImportCsv">↧ Import CSV</button>
+      <button class="btn" id="btnNewMember">+ New member</button>
+    </div>
+    <div class="table-wrap" id="tableWrap"></div>
+  </div>
+
+  <!-- ── Upcoming tab ── -->
+  <div id="tab-upcoming" class="hide">
+    <div class="toolbar">
+      <div style="font-size:0.84rem;color:var(--grey);flex:1">Dates coming up — birthdays, renewals, follow-ups &amp; more</div>
+      <select class="filter" id="horizonFilter">
+        <option value="30">Next 30 days</option>
+        <option value="60">Next 60 days</option>
+        <option value="90">Next 90 days</option>
+        <option value="365">Next 12 months</option>
+      </select>
+    </div>
+    <div id="upcomingWrap"></div>
+  </div>
+
+  <!-- ── Fields tab ── -->
+  <div id="tab-fields" class="hide">
+    <div class="toolbar">
+      <div style="font-size:0.84rem;color:var(--grey);flex:1">Define what you track about each member. Add custom fields anytime.</div>
+      <button class="btn" id="btnNewField">+ New field</button>
+    </div>
+    <div class="fields-list" id="fieldsList"></div>
+  </div>
+</div>
+
+<!-- ── Member drawer ── -->
+<div class="scrim" id="scrim"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-head">
+    <div class="avatar" id="drawerAvatar"></div>
+    <div class="htitle">
+      <h2 id="drawerTitle">New member</h2>
+      <p id="drawerSub"></p>
+    </div>
+    <button class="iconbtn" id="drawerClose">✕</button>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+  <div class="drawer-foot">
+    <button class="btn danger sm" id="btnDeleteMember">Delete</button>
+    <div class="spacer"></div>
+    <button class="btn ghost" id="btnCancelMember">Cancel</button>
+    <button class="btn" id="btnSaveMember">Save</button>
+  </div>
+</div>
+
+<!-- ── Field modal ── -->
+<div class="modal-scrim" id="fieldModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="fieldModalTitle">New field</h2>
+      <p>Custom fields appear on every member.</p>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Field name</label>
+        <input type="text" id="fName" placeholder="e.g. Birthday, Phone, Company">
+      </div>
+      <div class="form-group" id="typeGroup">
+        <label>Type</label>
+        <div class="type-grid" id="typeGrid"></div>
+      </div>
+      <div class="form-group hide" id="optionsGroup">
+        <label id="optionsLabel">Options <span class="hint">(one per line)</span></label>
+        <textarea id="fOptions" placeholder="Gold&#10;Silver&#10;Bronze"></textarea>
+      </div>
+      <div class="form-group inline-check">
+        <input type="checkbox" id="fShowTable">
+        <label for="fShowTable">Show as a column in the members table</label>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn danger sm hide" id="btnDeleteField">Delete field</button>
+      <button class="btn ghost" id="btnCancelField">Cancel</button>
+      <button class="btn" id="btnSaveField">Save field</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Templates modal ── -->
+<div class="modal-scrim" id="tplModal">
+  <div class="modal" style="width:520px">
+    <div class="modal-head">
+      <h2>Message templates</h2>
+      <p>Used to pre-fill drafts. <code style="font-size:0.8em">{first}</code>, <code style="font-size:0.8em">{name}</code> and <code style="font-size:0.8em">{type}</code> get filled in per person.</p>
+    </div>
+    <div class="modal-body" id="tplBody"></div>
+    <div class="modal-body" style="border-top:1px solid var(--line);padding-top:16px">
+      <div class="tpl-voice-head">
+        <strong>Your writing voice</strong>
+        <span id="voiceCount" class="hint"></span>
+      </div>
+      <p class="hint" style="margin:2px 0 8px">Tribe learns your style from messages you send. Paste or edit a few examples here to teach it faster — separate samples with a blank line. The AI mirrors the <em>style</em>, not the content.</p>
+      <textarea id="voiceSamplesInput" placeholder="Paste a few messages you've written, in your natural voice…" style="width:100%;min-height:90px;padding:9px 11px;border:1px solid var(--line);border-radius:8px;outline:none;resize:vertical;font-size:0.85rem;line-height:1.5;color:var(--ink)"></textarea>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost sm" id="btnAddTpl" style="margin-right:auto">+ Add template</button>
+      <button class="btn ghost" id="btnCancelTpl">Cancel</button>
+      <button class="btn" id="btnSaveTpl">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Plan my week (AI digest) modal ── -->
+<div class="modal-scrim" id="weekModal">
+  <div class="modal" style="width:540px">
+    <div class="modal-head">
+      <h2>✨ Your week</h2>
+      <p>A prioritised plan from your local AI — who to reach out to first.</p>
+    </div>
+    <div class="modal-body" id="weekBody" style="white-space:pre-wrap;font-size:0.9rem;line-height:1.6;color:var(--ink-2);min-height:60px"></div>
+    <div class="modal-foot">
+      <button class="btn ghost" id="btnWeekClose">Close</button>
+      <button class="btn" id="btnWeekRegen">↻ Regenerate</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── CSV import modal ── -->
+<div class="modal-scrim" id="csvModal">
+  <div class="modal" style="width:600px">
+    <div class="modal-head">
+      <h2>Import contacts from CSV</h2>
+      <p id="csvSubhead">Export from Google Contacts, Apple Contacts, or any spreadsheet, then drop the file here.</p>
+    </div>
+    <div class="modal-body">
+      <input type="file" id="csvFile" accept=".csv,text/csv" class="hide">
+      <div id="csvDrop" class="csv-drop">
+        <div class="big">↧</div>
+        <p>Click to choose a <strong>.csv</strong> file</p>
+      </div>
+      <div id="csvMapping" class="hide">
+        <div class="csv-opts">
+          <label class="toggle"><input type="checkbox" id="csvSkipDupes" checked><span class="track"></span><span class="tlabel">Skip duplicates (same email)</span></label>
+          <div class="csv-dateorder">Dates are
+            <select id="csvDateOrder">
+              <option value="dmy">DD/MM/YYYY</option>
+              <option value="mdy">MM/DD/YYYY</option>
+            </select>
+          </div>
+        </div>
+        <div class="csv-maptable" id="csvMapTable"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <span id="csvCount" style="margin-right:auto;font-size:0.82rem;color:var(--grey)"></span>
+      <button class="btn ghost" id="btnCancelCsv">Cancel</button>
+      <button class="btn hide" id="btnDoImport">Import</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Cloud sync (Supabase) modal ── -->
+<div class="modal-scrim" id="sbModal">
+  <div class="modal" style="width:440px">
+    <div class="modal-head">
+      <h2 id="sbTitle">Sign in</h2>
+      <p id="sbStatus">Sign in to sync your data to the cloud and across your devices.</p>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label>Email</label><input type="email" id="sbEmail" placeholder="you@example.com" autocomplete="email"></div>
+      <div class="form-group hide" id="sbCodeRow"><label>6-digit code from your email</label><input type="text" id="sbCode" inputmode="numeric" placeholder="123456" autocomplete="one-time-code"></div>
+      <div class="gh-warn">🔒 No password needed — we email you a one-time sign-in link &amp; code. Enter the code here, <em>or</em> just click the link in the email. Your data stays private to your account.</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn danger sm hide" id="btnSbSignout" style="margin-right:auto">Sign out</button>
+      <button class="btn ghost" id="btnSbClose">Close</button>
+      <button class="btn" id="btnSbSendCode">Email me a code</button>
+      <button class="btn hide" id="btnSbVerify">Sign in</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+/* ───────────────────────── Storage ───────────────────────── */
+const KEY = "tribe_v1";
+const AVATAR_COLORS = ["#6366f1","#ec4899","#f59e0b","#10b981","#3b82f6","#8b5cf6","#ef4444","#14b8a6","#f97316","#0ea5e9"];
+
+const FIELD_TYPES = [
+  { type:"text",     label:"Text",      ico:"𝐓" },
+  { type:"email",    label:"Email",     ico:"@" },
+  { type:"phone",    label:"Phone",     ico:"☎" },
+  { type:"number",   label:"Number",    ico:"#" },
+  { type:"date",     label:"Date",      ico:"📅" },
+  { type:"select",   label:"Choice",    ico:"▾" },
+  { type:"tags",     label:"Labels",    ico:"🏷" },
+  { type:"url",      label:"Link",      ico:"🔗" },
+  { type:"boolean",  label:"Yes / No",  ico:"✓" },
+  { type:"textarea", label:"Notes",     ico:"¶" },
+];
+
+function uid(){ return "f" + Math.random().toString(36).slice(2,9) + Date.now().toString(36).slice(-4); }
+
+const DEFAULT_DATE_TYPES = ["Birthday","Anniversary","Renewal","Joined","Follow-up"];
+const COLD_DAYS = 60; // "gone quiet" threshold
+
+function defaultTemplates(){
+  return [
+    { id:"t_bday", name:"Birthday", appliesTo:"Birthday", subject:"Happy birthday, {first}! 🎉",
+      body:"Hi {first}, happy birthday! 🎉 Hope your day is wonderful and this year treats you brilliantly. Thinking of you!" },
+    { id:"t_anniv", name:"Anniversary", appliesTo:"Anniversary", subject:"Happy anniversary, {first}!",
+      body:"Hi {first}, happy anniversary! 🥂 Wishing you many more good years ahead." },
+    { id:"t_cold", name:"Just checking in", appliesTo:"cold", subject:"It's been a while, {first}!",
+      body:"Hey {first}, it's been too long! Just thinking of you and wanted to check in — how have you been?" },
+  ];
+}
+
+function defaultData(){
+  return {
+    fields: [
+      { id:"name",   label:"Name",   type:"text",  system:true, required:true, showInTable:true, order:0 },
+      { id:"email",  label:"Email",  type:"email", system:true, showInTable:true, order:1 },
+      { id:"phone",  label:"Phone",  type:"phone", showInTable:false, order:2 },
+      { id:"labels", label:"Labels", type:"tags",  showInTable:true, order:3 },
+      { id:"dates",  label:"Dates",  type:"datelist", system:true, options:[...DEFAULT_DATE_TYPES], showInTable:true, order:4 },
+      { id:"notes",  label:"Notes",  type:"textarea", showInTable:false, order:5 },
+    ],
+    members: [],
+    templates: defaultTemplates(),
+    voiceSamples: [],
+    lastBackup: null
+  };
+}
+
+// v1→v2: fold legacy single-date built-ins (birthday/joined) into one "Dates" list.
+function migrate(d){
+  if(!d.fields.some(f=>f.type==="datelist")){
+    const legacy = d.fields.filter(f=> f.id==="birthday" || f.id==="joined");
+    d.fields.push({ id:"dates", label:"Dates", type:"datelist", system:true, options:[...DEFAULT_DATE_TYPES], showInTable:true, order:4 });
+    d.members.forEach(m=>{
+      const arr = Array.isArray(m.data.dates) ? m.data.dates : [];
+      legacy.forEach(f=>{
+        if(m.data[f.id]) arr.push({ type:f.label, date:m.data[f.id], recurrence: f.id==="birthday" ? "yearly" : "once" });
+        delete m.data[f.id];
+      });
+      m.data.dates = arr;
+    });
+    d.fields = d.fields.filter(f=> f.id!=="birthday" && f.id!=="joined");
+  }
+  if(!Array.isArray(d.templates) || !d.templates.length) d.templates = defaultTemplates();
+  if(!Array.isArray(d.voiceSamples)) d.voiceSamples = [];
+  return d;
+}
+
+let db = load();
+function load(){
+  try {
+    const raw = localStorage.getItem(KEY);
+    if(raw){ const d = JSON.parse(raw); if(d && d.fields && d.members) return migrate(d); }
+  } catch(e){}
+  return defaultData();
+}
+function save(){ localStorage.setItem(KEY, JSON.stringify(db)); scheduleSupabaseSync(); }
+
+/* ───────────────────────── Helpers ───────────────────────── */
+function fieldById(id){ return db.fields.find(f=>f.id===id); }
+function sortedFields(){ return [...db.fields].sort((a,b)=>(a.order??99)-(b.order??99)); }
+function memberName(m){ return (m.data.name||"").trim() || "Untitled"; }
+function memberEmail(m){ return (m.data.email||"").trim(); }
+
+function initials(name){
+  const parts = (name||"").trim().split(/\s+/).filter(Boolean);
+  if(!parts.length) return "?";
+  if(parts.length===1) return parts[0].slice(0,2).toUpperCase();
+  return (parts[0][0]+parts[parts.length-1][0]).toUpperCase();
+}
+function colorFor(str){
+  let h=0; for(let i=0;i<str.length;i++) h=(h*31+str.charCodeAt(i))>>>0;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
+}
+function avatarHTML(m, cls=""){
+  const name = memberName(m);
+  return `<div class="avatar ${cls}" style="background:${colorFor(name)}">${initials(name)}</div>`;
+}
+
+function escapeHTML(s){ return String(s==null?"":s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+/* ── date formatting & recurrence ── */
+function fmtDate(iso){
+  if(!iso) return "";
+  const [y,m,d] = iso.split("-").map(Number);
+  if(!m||!d) return iso;
+  const dt = new Date(y||2000, m-1, d);
+  return dt.toLocaleDateString(undefined, y ? { day:"numeric", month:"short", year:"numeric" } : { day:"numeric", month:"short" });
+}
+function fmtDateShort(iso){
+  if(!iso) return "";
+  const [y,m,d] = iso.split("-").map(Number);
+  if(!m||!d) return iso;
+  const dt = new Date(y||2000, m-1, d);
+  return dt.toLocaleDateString(undefined, { day:"numeric", month:"short" });
+}
+function todayMidnight(){ const n=new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); }
+function isoLocal(dt){ return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}`; }
+function clampDay(year, monthIdx, day){ return Math.min(day, new Date(year, monthIdx+1, 0).getDate()); }
+
+const RECURRENCE = [
+  { v:"once",    label:"One-time" },
+  { v:"yearly",  label:"Every year" },
+  { v:"monthly", label:"Every month" },
+  { v:"weekly",  label:"Every week" },
+];
+function recLabel(v){ return (RECURRENCE.find(r=>r.v===v)||RECURRENCE[1]).label; }
+
+// next occurrence of a date given its recurrence; returns {date, daysUntil, turningAge|null}
+// for "once", daysUntil can be negative (past) — callers filter those out.
+function nextOccurrence(iso, recurrence){
+  if(!iso) return null;
+  const [y,m,d] = iso.split("-").map(Number);
+  if(!m||!d) return null; // year optional (birthdays imported without a year)
+  const today = todayMidnight();
+  let date, turningAge = null;
+  recurrence = recurrence || "yearly";
+
+  if(recurrence === "once"){
+    date = new Date(y, m-1, d);
+  } else if(recurrence === "monthly"){
+    let yr = today.getFullYear(), mo = today.getMonth();
+    date = new Date(yr, mo, clampDay(yr, mo, d));
+    if(date < today){ mo++; if(mo>11){ mo=0; yr++; } date = new Date(yr, mo, clampDay(yr, mo, d)); }
+  } else if(recurrence === "weekly"){
+    const wd = new Date(y, m-1, d).getDay();
+    date = new Date(today);
+    date.setDate(today.getDate() + ((wd - today.getDay() + 7) % 7));
+  } else { // yearly
+    let yr = today.getFullYear();
+    date = new Date(yr, m-1, clampDay(yr, m-1, d));
+    if(date < today){ yr++; date = new Date(yr, m-1, clampDay(yr, m-1, d)); }
+    turningAge = y ? (yr - y) : null;
+  }
+  const daysUntil = Math.round((date - today) / 86400000);
+  return { date, daysUntil, turningAge };
+}
+
+/* ───────────────────────── Toast ───────────────────────── */
+let toastT;
+function toast(msg){
+  const el = document.getElementById("toast");
+  el.textContent = msg; el.classList.add("show");
+  clearTimeout(toastT); toastT = setTimeout(()=>el.classList.remove("show"), 2200);
+}
+
+/* ───────────────────────── Render: stats ───────────────────────── */
+function renderStats(){
+  const total = db.members.length;
+  // new this month
+  const now = new Date(); const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
+  const newThisMonth = db.members.filter(m=>(m.createdAt||"").startsWith(ym)).length;
+  // upcoming recurring in 30d
+  const up = collectUpcoming(30).length;
+  const out = collectOutreach();
+  const due = out.today.length + out.cold.length;
+
+  document.getElementById("stats").innerHTML = `
+    <div class="stat click" id="statOutreach"><div class="label">Reach out now</div><div class="value">${due}</div><div class="sub">${out.today.length} today · ${out.cold.length} gone quiet</div></div>
+    <div class="stat click" id="statTotal"><div class="label">Total members</div><div class="value">${total}</div></div>
+    <div class="stat click" id="statUpcoming"><div class="label">Upcoming (30d)</div><div class="value">${up}</div><div class="sub">birthdays, renewals & more</div></div>
+    <div class="stat click" id="statNew"><div class="label">New this month</div><div class="value">${newThisMonth}</div><div class="sub">added in ${now.toLocaleDateString(undefined,{month:"long"})}</div></div>
+  `;
+  const wire = (id, fn) => { const el = document.getElementById(id); if(el) el.onclick = fn; };
+  wire("statOutreach", ()=>switchTab("outreach"));
+  wire("statUpcoming", ()=>switchTab("upcoming"));
+  wire("statTotal", ()=>{ newThisMonthOnly=false; switchTab("members"); renderMembers(); });
+  wire("statNew", ()=>{ newThisMonthOnly=true; switchTab("members"); renderMembers(); });
+}
+
+/* ───────────────────────── Render: members table ───────────────────────── */
+let sortKey = "name", sortDir = 1, query = "", labelFilterVal = "", newThisMonthOnly = false, needsAttentionOnly = false;
+
+function tableColumns(){
+  // member column always first, then fields flagged showInTable (excluding name which is the member col)
+  return sortedFields().filter(f=>f.showInTable && f.id!=="name" && f.id!=="email");
+}
+
+/* derive a single actionable "what's next" signal per member — pure code, no AI (dates must be exact) */
+function dateIcon(type){
+  const t = (type||"").toLowerCase();
+  if(/birth/.test(t)) return "🎂";
+  if(/anniv/.test(t)) return "💍";
+  if(/renew/.test(t)) return "🔁";
+  if(/follow/.test(t)) return "⏰";
+  return "📅";
+}
+function memberSignal(m){
+  let soonest = null;
+  dateListFields().forEach(f=> (m.data[f.id]||[]).forEach(e=>{
+    if(!e || !e.date) return;
+    const rec = nextOccurrence(e.date, e.recurrence);
+    if(rec && rec.daysUntil >= 0 && (!soonest || rec.daysUntil < soonest.days)) soonest = { type:e.type||"Date", days:rec.daysUntil };
+  }));
+  const quiet = daysSince(lastContactISO(m) || m.createdAt);
+  const reachable = !!(emailOf(m) || waDigits(m));
+  const coldHushed = m.snoozed && m.snoozed.cold && daysSince(m.snoozed.cold) < COLD_SNOOZE_DAYS;
+  const cold = reachable && quiet >= COLD_DAYS && !coldHushed;
+  if(soonest && soonest.days <= 14) return { kind:"date", type:soonest.type, days:soonest.days, sort:soonest.days };
+  if(cold) return { kind:"cold", quiet, sort: 14 + (1 - Math.min(quiet,365)/365) };
+  if(soonest && soonest.days <= 90) return { kind:"date", type:soonest.type, days:soonest.days, sort:soonest.days };
+  return { kind:"none", sort: 9999 };
+}
+function needsAttention(m){ const s = memberSignal(m); return (s.kind==="date" && s.days<=14) || s.kind==="cold"; }
+function signalChip(m){
+  const s = memberSignal(m);
+  if(s.kind==="none") return `<span class="sig none">—</span>`;
+  if(s.kind==="cold") return `<span class="sig cold">💤 Quiet ${s.quiet}d · reconnect</span>`;
+  const when = s.days===0 ? "today" : s.days===1 ? "tomorrow" : `in ${s.days}d`;
+  const urg = s.days<=2 ? "urgent" : s.days<=14 ? "soon" : "far";
+  return `<span class="sig ${urg}">${dateIcon(s.type)} ${escapeHTML(s.type)} ${when}</span>`;
+}
+
+function memberMatches(m){
+  if(needsAttentionOnly && !needsAttention(m)) return false;
+  if(newThisMonthOnly){
+    const now = new Date(); const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
+    if(!(m.createdAt||"").startsWith(ym)) return false;
+  }
+  if(labelFilterVal){
+    const labels = m.data.labels || [];
+    if(!labels.includes(labelFilterVal)) return false;
+  }
+  if(!query) return true;
+  const q = query.toLowerCase();
+  // search across all string-ish values
+  return db.fields.some(f=>{
+    const v = m.data[f.id];
+    if(v==null) return false;
+    if(Array.isArray(v)) return v.some(x=>String(x).toLowerCase().includes(q));
+    return String(v).toLowerCase().includes(q);
+  });
+}
+
+function compareMembers(a,b){
+  if(sortKey==="next") return (memberSignal(a).sort - memberSignal(b).sort) * sortDir;
+  let va, vb;
+  if(sortKey==="name"){ va=memberName(a).toLowerCase(); vb=memberName(b).toLowerCase(); }
+  else { va=a.data[sortKey]; vb=b.data[sortKey]; }
+  va = va==null ? "" : (Array.isArray(va)? va.join(","): va);
+  vb = vb==null ? "" : (Array.isArray(vb)? vb.join(","): vb);
+  if(va<vb) return -1*sortDir; if(va>vb) return 1*sortDir; return 0;
+}
+
+function cellValue(m, f){
+  const v = m.data[f.id];
+  if(v==null || v==="" || (Array.isArray(v)&&!v.length)) return `<span style="color:var(--grey-2)">—</span>`;
+  switch(f.type){
+    case "tags": return v.map(t=>`<span class="pill">${escapeHTML(t)}</span>`).join("");
+    case "date": return escapeHTML(fmtDate(v));
+    case "boolean": return v ? `<span class="pill accent">Yes</span>` : `<span class="pill">No</span>`;
+    case "url": return `<a href="${escapeHTML(v)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--blue)">${escapeHTML(v.replace(/^https?:\/\//,""))}</a>`;
+    case "select": return `<span class="pill">${escapeHTML(v)}</span>`;
+    case "datelist": {
+      const sorted = [...v].filter(e=>e&&e.date);
+      const shown = sorted.slice(0,3).map(e=>`<span class="pill">${escapeHTML(e.type||"Date")} · ${escapeHTML(fmtDateShort(e.date))}</span>`).join("");
+      return shown + (sorted.length>3 ? ` <span class="pill">+${sorted.length-3}</span>` : "");
+    }
+    default: return escapeHTML(v);
+  }
+}
+
+function renderMembers(){
+  const cols = tableColumns();
+  const rows = db.members.filter(memberMatches).sort(compareMembers);
+  const wrap = document.getElementById("tableWrap");
+
+  document.getElementById("cMembers").textContent = db.members.length;
+
+  if(!db.members.length){
+    wrap.innerHTML = `<div class="empty">
+      <div class="big">🪢</div>
+      <h3>No members yet</h3>
+      <p>Start building your tribe — add your first person, or load a few samples to explore.</p>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="btn" onclick="openMember()">+ Add a member</button>
+        <button class="btn ghost" onclick="openCsv()">↧ Import CSV</button>
+        <button class="btn ghost" onclick="loadSamples()">Load sample data</button>
+      </div>
+    </div>`;
+    return;
+  }
+  const chipText = needsAttentionOnly ? "Showing people who need attention"
+    : newThisMonthOnly ? "Showing members added this month" : "";
+  const chip = chipText ? `<div class="list-filter">${chipText} <button class="lf-clear" type="button">Clear</button></div>` : "";
+  const clearFilters = ()=>{ newThisMonthOnly=false; needsAttentionOnly=false; const b=document.getElementById("btnNeedsAttn"); if(b) b.classList.remove("active"); renderMembers(); };
+
+  if(!rows.length){
+    wrap.innerHTML = chip + `<div class="empty"><div class="big">🔍</div><h3>No matches</h3><p>Try a different search or filter.</p></div>`;
+    const c = wrap.querySelector(".lf-clear"); if(c) c.onclick = clearFilters;
+    return;
+  }
+
+  const arrow = k => sortKey===k ? `<span class="arrow">${sortDir>0?"▲":"▼"}</span>` : "";
+  let html = chip + `<table><thead><tr>
+    <th class="sortable" data-sort="name">Member ${arrow("name")}</th>
+    <th class="sortable" data-sort="next">Next ${arrow("next")}</th>`;
+  cols.forEach(f=>{ html += `<th class="sortable hide-sm" data-sort="${f.id}">${escapeHTML(f.label)} ${arrow(f.id)}</th>`; });
+  html += `</tr></thead><tbody>`;
+
+  rows.forEach(m=>{
+    html += `<tr data-id="${m.id}">
+      <td><div class="member-cell">${avatarHTML(m)}<div><div class="member-name">${escapeHTML(memberName(m))}</div><div class="member-email">${escapeHTML(memberEmail(m))}</div></div></div></td>
+      <td class="next-cell">${signalChip(m)}</td>`;
+    cols.forEach(f=>{ html += `<td class="hide-sm">${cellValue(m,f)}</td>`; });
+    html += `</tr>`;
+  });
+  html += `</tbody></table>`;
+  wrap.innerHTML = html;
+
+  const c = wrap.querySelector(".lf-clear"); if(c) c.onclick = clearFilters;
+
+  wrap.querySelectorAll("thead th.sortable").forEach(th=>{
+    th.onclick = ()=>{
+      const k = th.dataset.sort;
+      if(sortKey===k) sortDir*=-1; else { sortKey=k; sortDir=1; }
+      renderMembers();
+    };
+  });
+  wrap.querySelectorAll("tbody tr").forEach(tr=>{
+    tr.onclick = ()=>openMember(tr.dataset.id);
+  });
+}
+
+function refreshLabelFilter(){
+  const sel = document.getElementById("labelFilter");
+  const labels = new Set();
+  db.members.forEach(m=>(m.data.labels||[]).forEach(l=>labels.add(l)));
+  const cur = sel.value;
+  sel.innerHTML = `<option value="">All labels</option>` + [...labels].sort().map(l=>`<option value="${escapeHTML(l)}">${escapeHTML(l)}</option>`).join("");
+  sel.value = cur;
+}
+
+/* ───────────────────────── Render: upcoming ───────────────────────── */
+function dateListFields(){ return db.fields.filter(f=>f.type==="datelist"); }
+
+function collectUpcoming(horizon){
+  const items = [];
+  const flds = dateListFields();
+  db.members.forEach(m=>{
+    flds.forEach(f=>{
+      (m.data[f.id]||[]).forEach(entry=>{
+        if(!entry || !entry.date) return;
+        const rec = nextOccurrence(entry.date, entry.recurrence);
+        if(rec && rec.daysUntil >= 0 && rec.daysUntil <= horizon){
+          items.push({ member:m, type:(entry.type||"Date"), recurrence:(entry.recurrence||"yearly"), iso:entry.date, ...rec });
+        }
+      });
+    });
+  });
+  items.sort((a,b)=>a.daysUntil-b.daysUntil);
+  return items;
+}
+
+function renderUpcoming(){
+  const horizon = parseInt(document.getElementById("horizonFilter").value,10);
+  const items = collectUpcoming(horizon);
+  document.getElementById("cUpcoming").textContent = collectUpcoming(30).length;
+  const wrap = document.getElementById("upcomingWrap");
+
+  const anyEntries = db.members.some(m=>dateListFields().some(f=>(m.data[f.id]||[]).some(e=>e&&e.date)));
+  if(!anyEntries){
+    wrap.innerHTML = `<div class="empty"><div class="big">📅</div><h3>No dates yet</h3>
+      <p>Open a member and add dates — birthdays, renewals, follow-ups — each with how it repeats. Upcoming ones show here.</p>
+      <button class="btn ghost" onclick="switchTab('members')">Go to Members</button></div>`;
+    return;
+  }
+  if(!items.length){
+    wrap.innerHTML = `<div class="empty"><div class="big">🎈</div><h3>Nothing coming up</h3><p>No dates in the next ${horizon} days.</p></div>`;
+    return;
+  }
+
+  wrap.innerHTML = `<div class="up-list">` + items.map(it=>{
+    const dayLabel = it.daysUntil===0 ? "Today" : it.daysUntil===1 ? "Tomorrow" : `${it.daysUntil}`;
+    const unit = it.daysUntil<=1 ? "" : "days";
+    const ageStr = it.turningAge!=null ? `turns ${it.turningAge}` : "";
+    const repeats = it.recurrence==="once" ? "one-time" : recLabel(it.recurrence).toLowerCase();
+    return `<div class="up-card" data-id="${it.member.id}">
+      <div class="up-when"><div class="days">${dayLabel}</div><div class="unit">${unit}</div></div>
+      ${avatarHTML(it.member)}
+      <div class="up-main"><div class="who">${escapeHTML(memberName(it.member))}</div><div class="what">${escapeHTML(it.type)} · ${repeats}</div></div>
+      <div class="up-date">${fmtDateShort(it.iso)}<div class="age">${ageStr}</div></div>
+    </div>`;
+  }).join("") + `</div>`;
+
+  wrap.querySelectorAll(".up-card").forEach(c=>c.onclick=()=>openMember(c.dataset.id));
+}
+
+/* ───────────────────────── Outreach ───────────────────────── */
+const OUT_HORIZON = 7;        // days ahead to surface date-based outreach
+const COLD_SNOOZE_DAYS = 45;  // after acting on a cold contact, hush for this long
+const COLD_LIMIT = 8;
+const GENERIC_TPL = { subject:"Hi {first}!", body:"Hi {first}, thinking of you — just wanted to reach out about your {type}." };
+const GENERIC_COLD = { subject:"It's been a while, {first}", body:"Hey {first}, it's been too long — how have you been? Would love to catch up." };
+
+function firstName(m){ return (memberName(m).split(/\s+/)[0]) || "there"; }
+function emailOf(m){ return (m.data.email||"").trim(); }
+function waDigits(m){ return (m.data.phone||"").replace(/[^0-9]/g,""); }
+function fillTpl(str, m, type){
+  return (str||"").replace(/\{first\}/g, firstName(m)).replace(/\{name\}/g, memberName(m)).replace(/\{type\}/g, (type||"message").toLowerCase());
+}
+function templateFor(applies){
+  return db.templates.find(x=> (x.appliesTo||"").toLowerCase() === (applies||"").toLowerCase()) || null;
+}
+function lastContactISO(m){
+  const log = m.log || [];
+  if(!log.length) return null;
+  return log.map(e=>e.date).sort().slice(-1)[0];
+}
+function daysSince(iso){ if(!iso) return Infinity; return Math.round((todayMidnight() - new Date(iso+"T00:00:00")) / 86400000); }
+function isSnoozed(m, key){ return !!(m.snoozed && m.snoozed[key]); }
+function coldSnoozed(m){ const v = m.snoozed && m.snoozed.cold; return v && daysSince(v) < COLD_SNOOZE_DAYS; }
+function snoozedUntilActive(m, key){ // still snoozed if the wake-time is in the future
+  const v = m.snoozedUntil && m.snoozedUntil[key];
+  if(!v) return false;
+  const t = typeof v === "number" ? v : Date.parse(v); // epoch ms, or legacy ISO-date string
+  return t && t > Date.now();
+}
+
+function gmailUrl(email, subject, body){
+  return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+function waUrl(digits, body){ return `https://wa.me/${digits}?text=${encodeURIComponent(body)}`; }
+
+function collectOutreach(){
+  const today = [], soon = [], cold = [];
+  const flagged = new Set(); // members already surfaced by a date card (don't also show as cold)
+
+  db.members.forEach(m=>{
+    dateListFields().forEach(f=>{
+      (m.data[f.id]||[]).forEach(entry=>{
+        if(!entry || !entry.date) return;
+        const rec = nextOccurrence(entry.date, entry.recurrence);
+        if(!rec || rec.daysUntil < 0 || rec.daysUntil > OUT_HORIZON) return;
+        const occKey = `${entry.type||"Date"}|${isoLocal(rec.date)}`;
+        flagged.add(m.id); // has a pending occasion → not treated as "gone quiet"
+        if(isSnoozed(m, occKey)) return;
+        if(snoozedUntilActive(m, occKey)) return;
+        const tpl = templateFor(entry.type) || GENERIC_TPL;
+        const card = {
+          kind:"date", member:m, type:entry.type||"Date", recurrence:entry.recurrence||"yearly",
+          iso:entry.date, daysUntil:rec.daysUntil, turningAge:rec.turningAge, occKey,
+          subject: fillTpl(tpl.subject, m, entry.type), body: fillTpl(tpl.body, m, entry.type),
+        };
+        (rec.daysUntil===0 ? today : soon).push(card);
+      });
+    });
+  });
+
+  db.members.forEach(m=>{
+    if(flagged.has(m.id) || coldSnoozed(m) || snoozedUntilActive(m, "cold")) return;
+    if(!emailOf(m) && !waDigits(m)) return; // can't reach them anyway
+    const last = lastContactISO(m);
+    const since = daysSince(last || m.createdAt);
+    if(since < COLD_DAYS) return;
+    const tpl = templateFor("cold") || GENERIC_COLD;
+    cold.push({
+      kind:"cold", member:m, type:"Reconnect", sinceDays:(last?since:null),
+      subject: fillTpl(tpl.subject, m, "catch-up"), body: fillTpl(tpl.body, m, "catch-up"),
+    });
+  });
+  cold.sort((a,b)=>(b.sinceDays||9e9)-(a.sinceDays||9e9));
+
+  today.sort((a,b)=>a.daysUntil-b.daysUntil);
+  soon.sort((a,b)=>a.daysUntil-b.daysUntil);
+  return { today, soon, cold: cold.slice(0, COLD_LIMIT), coldTotal: cold.length };
+}
+
+let outreachCache = null;
+
+function cardHTML(card){
+  const m = card.member;
+  const hasEmail = !!emailOf(m), hasWA = !!waDigits(m);
+  let why, pill, pillToday=false;
+  if(card.kind==="date"){
+    const repeats = card.recurrence==="once" ? "one-time" : recLabel(card.recurrence).toLowerCase();
+    const age = card.turningAge!=null ? ` · turns ${card.turningAge}` : "";
+    why = `${escapeHTML(card.type)} · ${repeats}${age}`;
+    pillToday = card.daysUntil===0;
+    pill = card.daysUntil===0 ? "Today" : card.daysUntil===1 ? "Tomorrow" : `in ${card.daysUntil} days`;
+  } else {
+    why = card.sinceDays!=null ? `Last talked ${card.sinceDays} days ago` : "No contact logged yet";
+    pill = "Reconnect";
+  }
+  return `<div class="out-card ${pillToday?"today":""}" data-mid="${m.id}" data-kind="${card.kind}" data-key="${escapeHTML(card.occKey||"cold")}">
+    <div class="out-top">
+      <div class="out-who" data-open title="Open ${escapeHTML(memberName(m))}">
+        ${avatarHTML(m)}
+        <div class="out-whotext"><div class="who">${escapeHTML(memberName(m))}</div><div class="why">${why}</div></div>
+      </div>
+      <span class="when-pill">${pill}</span>
+    </div>
+    <div class="out-context hide"></div>
+    <div class="out-draft">
+      <input class="subj" value="${escapeHTML(card.subject)}" placeholder="Email subject" title="Subject (email only)">
+      <textarea spellcheck="true">${escapeHTML(card.body)}</textarea>
+    </div>
+    <div class="out-actions">
+      <button class="btn ai-draft sm" data-act="draft" title="Let local AI write a personal opener from your history with them">✨ Draft</button>
+      <button class="btn email sm" data-act="email" ${hasEmail?"":"disabled"} title="${hasEmail?"Open a pre-filled Gmail compose":"No email on file"}">📧 Email</button>
+      <button class="btn wa sm" data-act="wa" ${hasWA?"":"disabled"} title="${hasWA?"Open WhatsApp with the message ready":"No phone number on file"}">💬 WhatsApp</button>
+      <span class="grow"></span>
+      <button class="btn skip-btn sm" data-act="skip" title="Not reaching out — clear this without logging anything">Skip</button>
+      <button class="btn ghost sm" data-act="later" title="Snooze until tomorrow 9 AM">🕘 Later</button>
+      <button class="btn done sm" data-act="done">✓ Done</button>
+    </div>
+  </div>`;
+}
+
+function renderOutreach(){
+  const data = collectOutreach();
+  outreachCache = data;
+  const due = data.today.length + data.cold.length;
+  document.getElementById("cOutreach").textContent = due || "";
+  const wrap = document.getElementById("outreachWrap");
+
+  const totalCards = data.today.length + data.soon.length + data.cold.length;
+  if(!db.members.length){
+    wrap.innerHTML = `<div class="empty"><div class="big">💬</div><h3>No one to reach yet</h3>
+      <p>Add members with a birthday or a phone/email, and each morning Tribe will line up ready-to-send notes here.</p>
+      <button class="btn ghost" onclick="switchTab('members')">Go to Members</button></div>`;
+    return;
+  }
+  if(!totalCards){
+    wrap.innerHTML = `<div class="empty"><div class="big">✨</div><h3>You're all caught up</h3>
+      <p>Nothing due in the next ${OUT_HORIZON} days and no one's gone quiet. Nice.</p></div>`;
+    return;
+  }
+
+  const section = (cls, title, cards) => !cards.length ? "" :
+    `<div class="out-section ${cls}"><div class="sec-head">${title} <span class="n">${cards.length}</span></div>
+      <div class="out-list">${cards.map(cardHTML).join("")}</div></div>`;
+
+  let html = "";
+  html += section("today", "Today", data.today);
+  html += section("soon", `Coming up · next ${OUT_HORIZON} days`, data.soon);
+  let coldTitle = "Reconnect — gone quiet";
+  if(data.coldTotal > data.cold.length) coldTitle += ` (showing ${data.cold.length} of ${data.coldTotal})`;
+  html += section("cold", coldTitle, data.cold);
+  wrap.innerHTML = html;
+
+  wrap.querySelectorAll(".out-card").forEach(wireOutreachCard);
+}
+
+function findCard(mid, kind, key){
+  if(!outreachCache) return null;
+  const pool = [...outreachCache.today, ...outreachCache.soon, ...outreachCache.cold];
+  return pool.find(c=> c.member.id===mid && c.kind===kind && (c.occKey||"cold")===key) || null;
+}
+
+function wireOutreachCard(el){
+  const mid = el.dataset.mid, kind = el.dataset.kind, key = el.dataset.key;
+  const m = db.members.find(x=>x.id===mid);
+  const card = findCard(mid, kind, key);
+  const getSubject = ()=> el.querySelector(".subj").value;
+  const getBody = ()=> el.querySelector("textarea").value;
+
+  const aiDraftOf = ()=> el.querySelector("textarea").dataset.aidraft;
+  el.querySelector('[data-act="email"]').onclick = ()=>{
+    if(!emailOf(m)) return;
+    window.open(gmailUrl(emailOf(m), getSubject(), getBody()), "_blank", "noopener");
+    captureVoiceSample(getBody(), aiDraftOf());
+    flashDone(el, m, card, "email");
+  };
+  el.querySelector('[data-act="wa"]').onclick = ()=>{
+    if(!waDigits(m)) return;
+    window.open(waUrl(waDigits(m), getBody()), "_blank", "noopener");
+    captureVoiceSample(getBody(), aiDraftOf());
+    flashDone(el, m, card, "whatsapp");
+  };
+  el.querySelector('[data-act="done"]').onclick = ()=> markDone(m, card, "manual");
+  el.querySelector('[data-act="later"]').onclick = ()=> snoozeCard(m, card);
+  el.querySelector('[data-act="skip"]').onclick = ()=> skipCard(m, card);
+  el.querySelector('[data-act="draft"]').onclick = ()=> outreachDraft(el, m, card);
+  el.querySelector('[data-open]').onclick = ()=> openMember(m.id);
+}
+
+async function outreachDraft(el, m, card){
+  const btn = el.querySelector('[data-act="draft"]');
+  // connect to local AI on demand (Ollama is instant; never auto-downloads the in-browser model)
+  if(aiState!=="ready"){
+    btn.disabled = true; btn.textContent = "✨ connecting…";
+    await enableAI();
+    btn.disabled = false; btn.textContent = "✨ Draft";
+  }
+  if(aiState!=="ready"){ toast("Turn on local AI in the Inbox tab first (needs Ollama running)"); return; }
+
+  btn.disabled = true; btn.textContent = "✨ writing…";
+  const draft = await aiDraftMessage(m, card);
+  btn.disabled = false; btn.textContent = "✨ Draft";
+  if(!draft || !draft.message){ toast("AI couldn't draft that one — your text is unchanged"); return; }
+
+  const ta = el.querySelector("textarea");
+  ta.value = draft.message;
+  ta.dataset.aidraft = draft.message; // remember the AI text so we only "learn" from your edits
+  const ctx = el.querySelector(".out-context");
+  // only show a recap when there's a real basis for one (else the model tends to pad/invent)
+  const hasBasis = (m.data.notes||"").trim() || (m.log||[]).length;
+  if(draft.context && hasBasis){ ctx.textContent = "↩ " + draft.context; ctx.classList.remove("hide"); }
+  else ctx.classList.add("hide");
+}
+
+// after opening a compose window, gently confirm logging without auto-assuming it was sent
+function flashDone(el, m, card, channel){
+  const doneBtn = el.querySelector('[data-act="done"]');
+  doneBtn.textContent = "✓ Sent? Log it";
+  doneBtn.onclick = ()=> markDone(m, card, channel);
+}
+
+function ensureMemberMeta(m){ if(!m.log) m.log = []; if(!m.snoozed) m.snoozed = {}; if(!m.snoozedUntil) m.snoozedUntil = {}; }
+
+function snoozeCard(m, card){
+  ensureMemberMeta(m);
+  const key = card.kind==="date" ? card.occKey : "cold";
+  const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(9,0,0,0); // tomorrow 9 AM local
+  m.snoozedUntil[key] = d.getTime();
+  save(); renderOutreach(); renderStats();
+  toast("Snoozed till tomorrow 9 AM");
+}
+
+function markDone(m, card, channel){
+  if(!m) return;
+  ensureMemberMeta(m);
+  m.log.push({ date: isoLocal(new Date()), channel, type: card ? card.type : "message" });
+  if(card){
+    if(card.kind==="date") m.snoozed[card.occKey] = true;
+    else m.snoozed.cold = isoLocal(new Date());
+  }
+  save(); renderOutreach(); renderStats();
+  toast(channel==="manual" ? "Logged" : `Logged · ${channel}`);
+}
+
+// dismiss this occasion WITHOUT logging a contact (so it won't falsely reset "gone quiet")
+function skipCard(m, card){
+  if(!m || !card) return;
+  ensureMemberMeta(m);
+  if(card.kind==="date") m.snoozed[card.occKey] = true;       // hide until next year's occurrence
+  else m.snoozed.cold = isoLocal(new Date());                 // hush reconnect for COLD_SNOOZE_DAYS
+  save(); renderOutreach(); renderStats();
+  toast("Skipped");
+}
+
+/* ✨ Plan my week — code finds the facts (dates/quiet), AI prioritises & phrases (one call) */
+function showWeek(text){ document.getElementById("weekBody").textContent = text; document.getElementById("weekModal").classList.add("open"); }
+function closeWeek(){ document.getElementById("weekModal").classList.remove("open"); }
+async function planWeek(){
+  document.getElementById("weekModal").classList.add("open");
+  if(aiState!=="ready"){ showWeek("Connecting to local AI…"); await enableAI(); }
+  if(aiState!=="ready"){ showWeek("Local AI isn't on. Turn it on in the Inbox tab (needs Ollama running), then try again."); return; }
+
+  // gather this-week-relevant signals — code computes the dates (reliable)
+  const items = [];
+  db.members.forEach(m=>{
+    const s = memberSignal(m);
+    if(s.kind==="none") return;
+    if(s.kind==="date" && s.days > 10) return;       // only near-term for a weekly plan
+    const notes = (m.data.notes||"").trim();
+    let line = memberName(m) + " — ";
+    line += s.kind==="date" ? `${s.type} ${s.days===0?"today":s.days===1?"tomorrow":"in "+s.days+" days"}` : `no contact in ${s.quiet} days`;
+    if(notes) line += `; notes: ${notes.slice(0,120)}`;
+    items.push({ line, sort:s.sort });
+  });
+  items.sort((a,b)=>a.sort-b.sort);
+  if(!items.length){ showWeek("Nothing pressing this week — you're all caught up. 🎉"); return; }
+
+  showWeek("Thinking…");
+  const sys = `You are a warm, concise relationship assistant. Given a list of people with what's coming up or how long since contact, write a short prioritised plan for the user's week: who to reach out to first and why. 3 to 6 bullet points, specific, friendly, use first names. Do NOT invent facts. Do NOT restate or invent exact day counts or dates — refer to timing loosely instead ("today", "this week", "it's been a while"). Plain text bullets starting with "•", no preamble or sign-off.`;
+  try {
+    const out = await aiChat(sys, "People:\n" + items.slice(0,15).map(i=>"- "+i.line).join("\n") + "\n\nWrite the week's plan.", { json:false, temp:0.4, max:500 });
+    showWeek((out||"").trim() || "(The model returned nothing — try Regenerate.)");
+  } catch(err){ showWeek("Couldn't generate a plan: " + err.message); }
+}
+
+/* ───────────────────────── Inbox (paste → match → approve) ───────────────────────── */
+let tesseractLoading = null;
+function loadTesseract(){
+  if(window.Tesseract) return Promise.resolve();
+  if(tesseractLoading) return tesseractLoading;
+  tesseractLoading = new Promise((res, rej)=>{
+    const s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+    s.onload = res;
+    s.onerror = ()=>{ tesseractLoading = null; rej(new Error("couldn't load the OCR library (need internet)")); };
+    document.head.appendChild(s);
+  });
+  return tesseractLoading;
+}
+async function ocrImage(file){
+  const status = document.getElementById("inboxStatus");
+  status.textContent = "Loading OCR…";
+  await loadTesseract();
+  status.textContent = "Reading image…";
+  try {
+    const { data } = await Tesseract.recognize(file, "eng", {
+      logger: m => { if(m.status==="recognizing text") status.textContent = `Reading image… ${Math.round(m.progress*100)}%`; }
+    });
+    const ta = document.getElementById("inboxText");
+    ta.value = (ta.value ? ta.value + "\n" : "") + data.text.trim();
+    status.textContent = "Read ✓ — review the text, then Find actions";
+  } catch(err){
+    status.textContent = "OCR failed: " + err.message;
+  }
+}
+
+function escapeRegex(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+
+function inboxExtract(text){
+  const emails = [...new Set((text.match(/[\w.+-]+@[\w-]+\.[\w.-]+/g) || []).map(e=>e.toLowerCase()))];
+  const matched = new Map(); // id -> {member, reasons:Set}
+  const add = (m, reason)=>{ if(!matched.has(m.id)) matched.set(m.id, {member:m, reasons:new Set()}); matched.get(m.id).reasons.add(reason); };
+
+  emails.forEach(em=>{ const m = db.members.find(x=>(x.data.email||"").toLowerCase()===em); if(m) add(m, "email"); });
+
+  // first-name frequency, to only trust unique first names
+  const firstCount = {};
+  db.members.forEach(m=>{ const f=(memberName(m).split(/\s+/)[0]||"").toLowerCase(); if(f) firstCount[f]=(firstCount[f]||0)+1; });
+  db.members.forEach(m=>{
+    const name = memberName(m); if(name.length<3) return;
+    if(new RegExp(`\\b${escapeRegex(name)}\\b`, "i").test(text)){ add(m, "name"); return; }
+    const first = name.split(/\s+/)[0];
+    if(first.length>=3 && firstCount[first.toLowerCase()]===1 && new RegExp(`\\b${escapeRegex(first)}\\b`, "i").test(text)) add(m, "name");
+  });
+
+  const knownEmails = new Set(db.members.map(m=>(m.data.email||"").toLowerCase()));
+  const newEmails = emails.filter(e=>!knownEmails.has(e));
+  return { matched: [...matched.values()], newEmails };
+}
+
+/* ── Optional local AI ── tries shared Ollama (localhost) first, falls back to in-browser WebLLM ── */
+let aiEngine = null, aiState = "off", aiMode = null, ollamaModel = null; // state: off|loading|ready|error
+const OLLAMA_URL = "http://localhost:11434";
+
+function setInboxStatus(t){ const el=document.getElementById("inboxStatus"); if(el) el.textContent = t; }
+function updateAiButton(){
+  const b = document.getElementById("btnInboxAI");
+  const w = document.getElementById("btnInboxAIWeb");
+  if(b){
+    b.textContent = aiState==="ready" ? "✨ Local AI on" : aiState==="loading" ? "✨ Loading…" : "✨ Use local AI";
+    b.disabled = aiState==="loading";
+    b.classList.toggle("ai-on", aiState==="ready");
+  }
+  if(w && aiState==="ready") w.classList.add("hide");
+  updateAiBadge();
+}
+// global header indicator — visible from any tab
+function updateAiBadge(){
+  const el = document.getElementById("aiBadge"); if(!el) return;
+  if(aiState==="ready"){
+    const label = aiMode==="ollama" ? (ollamaModel || "on") : "in-browser";
+    el.innerHTML = `<span class="ai-dot"></span>✨ ${escapeHTML(label)}`;
+    el.title = `Local AI active${aiMode==="ollama" ? " · Ollama" : " · in-browser"} — click to manage`;
+    el.classList.remove("hide");
+  } else if(aiState==="loading"){
+    el.innerHTML = `<span class="ai-dot loading"></span>✨ starting…`;
+    el.classList.remove("hide");
+  } else {
+    el.classList.add("hide");
+  }
+}
+
+// primary: shared Ollama server (same model Scribe & the rest of the toolkit use)
+async function enableAI(){
+  if(aiState==="ready" || aiState==="loading") return;
+  aiState = "loading"; updateAiButton(); setInboxStatus("Looking for Ollama on localhost…");
+  try {
+    const res = await fetch(OLLAMA_URL + "/api/tags", { cache:"no-store" });
+    if(!res.ok) throw new Error("Ollama " + res.status);
+    const names = ((await res.json()).models || []).map(m=>m.name);
+    if(!names.length){
+      aiState = "off"; updateAiButton();
+      setInboxStatus("Ollama is running but has no models — run  ollama pull gemma2:2b  then click again");
+      return;
+    }
+    const autoPick = names.find(n=>/gemma/i.test(n)) || names.find(n=>/llama|qwen|mistral|phi/i.test(n)) || names[0];
+    ollamaModel = (db.aiModel && names.includes(db.aiModel)) ? db.aiModel : autoPick;
+    aiMode = "ollama"; aiState = "ready"; updateAiButton();
+    setInboxStatus(`Local AI ready via Ollama · ${ollamaModel}`);
+    // model picker — lets you use a sharper model (e.g. mistral) for drafting
+    const sel = document.getElementById("aiModelSel");
+    if(sel){
+      sel.innerHTML = names.map(n=>`<option value="${escapeHTML(n)}" ${n===ollamaModel?"selected":""}>${escapeHTML(n)}</option>`).join("");
+      sel.classList.remove("hide");
+      sel.onchange = ()=>{ ollamaModel = sel.value; db.aiModel = sel.value; save(); setInboxStatus(`Using ${ollamaModel}`); updateAiBadge(); };
+    }
+  } catch(err){
+    aiState = "off"; updateAiButton();
+    setInboxStatus("Couldn't reach Ollama at localhost:11434 — is it running? If it is, set OLLAMA_ORIGINS=* and restart it, then click again.");
+    const w = document.getElementById("btnInboxAIWeb"); if(w) w.classList.remove("hide");
+  }
+}
+
+// fallback: download a model into the browser (WebGPU, ~1.5GB once)
+async function enableWebLLM(){
+  if(aiState==="loading") return;
+  aiState = "loading"; updateAiButton(); setInboxStatus("Loading in-browser model (~1.5GB, one time)…");
+  try {
+    const webllm = await import("https://esm.run/@mlc-ai/web-llm");
+    const list = webllm.prebuiltAppConfig.model_list;
+    const pick = list.find(x=>/gemma-2-2b-it-q4f16/i.test(x.model_id))
+      || list.find(x=>/gemma-2-2b-it/i.test(x.model_id)) || list.find(x=>/gemma/i.test(x.model_id));
+    if(!pick) throw new Error("no Gemma model available");
+    aiEngine = await webllm.CreateMLCEngine(pick.model_id, {
+      initProgressCallback: p => setInboxStatus(p.text || `Loading model… ${Math.round((p.progress||0)*100)}%`)
+    });
+    aiMode = "webllm"; aiState = "ready"; setInboxStatus("Local AI ready (in-browser Gemma)");
+  } catch(err){
+    aiState = "error"; aiEngine = null; setInboxStatus("Couldn't start in-browser AI: " + err.message + " — rules still work");
+  }
+  updateAiButton();
+}
+
+function aiSystemPrompt(){
+  const today = isoLocal(new Date());
+  return `You convert a message someone RECEIVED (it may be noisy OCR text from a screenshot) into clean JSON. Today is ${today}.`
+    + ` Reply with ONLY one JSON object, no prose: {"note": string, "reminder": boolean, "reminderDate": string|null}.`
+    + ` "note" = a clean 1-3 sentence summary of what they said (drop greetings, signatures, OCR junk).`
+    + ` "reminder" = true only if they imply a future follow-up/callback/meeting. "reminderDate" = "YYYY-MM-DD" if a concrete date/timeframe is implied, else null.`;
+}
+function parseAiJson(raw, fallbackText){
+  const a = raw.indexOf("{"), b = raw.lastIndexOf("}");
+  if(a<0 || b<a) return null;
+  try {
+    const j = JSON.parse(raw.slice(a, b+1));
+    return {
+      note: (typeof j.note==="string" && j.note.trim()) ? j.note.trim() : fallbackText,
+      reminderDate: (j.reminder && typeof j.reminderDate==="string" && /^\d{4}-\d{2}-\d{2}$/.test(j.reminderDate)) ? j.reminderDate : null,
+    };
+  } catch(err){ return null; }
+}
+// shared chat call — routes to Ollama or in-browser WebLLM, returns raw text
+async function aiChat(sys, user, opts={}){
+  const body = (user||"").slice(0, 4000);
+  const temp = opts.temp ?? 0.2, json = opts.json !== false;
+  if(aiMode==="ollama"){
+    const res = await fetch(OLLAMA_URL + "/api/chat", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ model: ollamaModel, stream:false, ...(json?{format:"json"}:{}), options:{temperature:temp},
+        messages:[{role:"system",content:sys},{role:"user",content:body}] })
+    });
+    if(!res.ok) throw new Error("Ollama " + res.status);
+    return (await res.json()).message?.content || "";
+  }
+  if(aiMode==="webllm" && aiEngine){
+    const res = await aiEngine.chat.completions.create({
+      messages:[{role:"system",content:sys},{role:"user",content:body}], temperature:temp, max_tokens:opts.max||300 });
+    return res.choices?.[0]?.message?.content || "";
+  }
+  throw new Error("AI not ready");
+}
+
+async function aiProcess(text){
+  try { return parseAiJson(await aiChat(aiSystemPrompt(), text, {temp:0.2}), text); }
+  catch(err){ return null; }
+}
+
+function parseDraftJson(raw){
+  const a = raw.indexOf("{"), b = raw.lastIndexOf("}");
+  if(a<0 || b<a) return null;
+  try {
+    const j = JSON.parse(raw.slice(a, b+1));
+    return { context: (typeof j.context==="string" ? j.context.trim() : ""), message: (typeof j.message==="string" ? j.message.trim() : "") };
+  } catch(err){ return null; }
+}
+// learn the user's voice: keep the messages they actually send/edit (not untouched AI drafts)
+function captureVoiceSample(text, aiDraft){
+  text = (text||"").trim();
+  if(text.length < 15) return;                                  // too short to be a useful style cue
+  if(aiDraft && text === (aiDraft||"").trim()) return;          // untouched AI draft = the model's voice, not yours
+  if(!Array.isArray(db.voiceSamples)) db.voiceSamples = [];
+  if(db.voiceSamples.includes(text)) return;                    // dedup
+  db.voiceSamples.push(text);
+  if(db.voiceSamples.length > 25) db.voiceSamples = db.voiceSamples.slice(-25);
+  save();
+}
+
+async function aiDraftMessage(m, card){
+  const occasion = card.kind==="date"
+    ? `their ${card.type}${card.daysUntil===0 ? " (today)" : card.daysUntil===1 ? " (tomorrow)" : ` (in ${card.daysUntil} days)`}`
+    : "reconnecting after being out of touch for a while";
+  const notes = (m.data.notes||"").trim();
+  const log = (m.log||[]).slice(-5).reverse().map(e=>`- ${e.date}: ${escapeHTML(e.note||e.type||e.channel||"contact")}`).join("\n");
+  const labels = (m.data.labels||[]).join(", ");
+  const samples = (db.voiceSamples||[]).slice(-3);
+  const voiceBlock = samples.length
+    ? `\nSTYLE EXAMPLES — how the sender writes (copy the voice, NOT the words):\n` + samples.map(s=>`"""${s}"""`).join("\n")
+    : "";
+  const sys = `You write a short personal outreach message for the SENDER to send, plus a one-line private recap. `
+    + `Return ONLY one JSON object, no prose: {"context": string, "message": string}. `
+    + `"context" = one short factual line reminding the sender what they know about this person, drawn ONLY from the Notes and Recent interactions given below. If none are given, use "". Never invent facts, projects or events. It's a private note-to-self, not a greeting. `
+    + `"message" = a fresh opener to send right now about ${occasion} — 1 to 2 sentences, first name only, no subject line, no sign-off.`
+    + (samples.length
+        ? ` Write the message in the SENDER'S OWN STYLE: match the tone, slang, emoji use, capitalisation, punctuation, energy and length of the STYLE EXAMPLES — but use NEW wording, do not reuse phrases from the examples.`
+        : ` Keep it warm and casual, not salesy or formal.`);
+  const user = `Person: ${memberName(m)} (first name: ${firstName(m)})\n`
+    + (labels ? `Labels: ${labels}\n` : "")
+    + (notes ? `Notes about them: ${notes}\n` : "")
+    + (log ? `Recent interactions (newest first):\n${log}\n` : "")
+    + voiceBlock
+    + `\n\nWrite the recap and the opener.`;
+  try { return parseDraftJson(await aiChat(sys, user, {temp:0.35, max:400})); }
+  catch(err){ return null; }
+}
+
+let inboxResult = null;
+async function inboxScan(){
+  const text = document.getElementById("inboxText").value.trim();
+  const out = document.getElementById("inboxOut");
+  if(!text){ out.innerHTML = `<div class="empty"><div class="big">📋</div><h3>Nothing to scan</h3><p>Paste some text or a screenshot above first.</p></div>`; return; }
+  if(!db.members.length){ out.innerHTML = `<div class="empty"><p>Add some members first, then paste here to log their replies.</p></div>`; return; }
+
+  // optional AI pass: clean note + suggested reminder date (falls back to raw text)
+  let noteText = text, presetDate = null;
+  if(aiState==="ready"){
+    const scanBtn = document.getElementById("btnInboxScan");
+    scanBtn.disabled = true; scanBtn.textContent = "Thinking…"; setInboxStatus("Local AI is reading it…");
+    const ai = await aiProcess(text);
+    scanBtn.disabled = false; scanBtn.textContent = "Find actions →";
+    if(ai){ noteText = ai.note; presetDate = ai.reminderDate; setInboxStatus(presetDate ? "Summarised · follow-up date suggested" : "Summarised with local AI"); }
+    else setInboxStatus("AI couldn't parse it — using your text as-is");
+  }
+
+  inboxResult = inboxExtract(text);
+  const { matched, newEmails } = inboxResult;
+  const reasonLabel = rs => rs.has("email") ? "matched by email" : "name mentioned";
+
+  const memberOpts = db.members.slice().sort((a,b)=>memberName(a).localeCompare(memberName(b)))
+    .map(m=>`<option value="${m.id}">${escapeHTML(memberName(m))}</option>`).join("");
+
+  let html = "";
+  html += `<div class="ix-assign">Who is this about? <select id="ixAssign"><option value="">— pick a member —</option>${memberOpts}</select>
+    <button class="btn ghost sm" id="ixAssignAdd">+ Add card</button></div>`;
+
+  html += `<div class="ix-list" id="ixList">`;
+  matched.forEach(({member, reasons})=> html += inboxCardHTML(member, reasonLabel(reasons), noteText, presetDate));
+  newEmails.forEach(em=> html += inboxNewCardHTML(em, noteText));
+  html += `</div>`;
+
+  if(!matched.length && !newEmails.length){
+    html = `<div class="empty" style="padding:30px"><div class="big">🤔</div><h3>No one matched automatically</h3><p>No known email or name found in the text. Pick who it's about:</p></div>` + html;
+  }
+
+  html += `<div class="ix-apply-bar"><span class="grow"></span><button class="btn" id="ixApply">Apply selected</button></div>`;
+  out.innerHTML = html;
+
+  out.querySelector("#ixAssignAdd").onclick = ()=>{
+    const sel = out.querySelector("#ixAssign"); const m = db.members.find(x=>x.id===sel.value);
+    if(!m) { toast("Pick a member first"); return; }
+    if(out.querySelector(`.ix-card[data-mid="${m.id}"]`)) { toast("Already added"); return; }
+    out.querySelector("#ixList").insertAdjacentHTML("beforeend", inboxCardHTML(m, "added manually", noteText, presetDate));
+  };
+  out.querySelector("#ixApply").onclick = inboxApply;
+}
+
+function inboxCardHTML(m, reason, noteText, presetDate){
+  const date = presetDate || (()=>{ const d=new Date(); d.setDate(d.getDate()+3); return isoLocal(d); })();
+  return `<div class="ix-card" data-mid="${m.id}">
+    <div class="ix-head">${avatarHTML(m)}<span class="who">${escapeHTML(memberName(m))}</span><span class="reason">${escapeHTML(reason)}</span></div>
+    <div class="ix-row"><input type="checkbox" class="ix-do-note" checked>
+      <div class="ix-field"><label>Add as a note</label><textarea class="ix-note">${escapeHTML(noteText)}</textarea></div></div>
+    <div class="ix-row"><input type="checkbox" class="ix-do-remind" ${presetDate?"checked":""}>
+      <div class="ix-field"><label>Set a follow-up reminder</label><br><input type="date" class="ix-remind-date" value="${date}"></div></div>
+  </div>`;
+}
+function inboxNewCardHTML(email, noteText){
+  const guess = email.split("@")[0].replace(/[._]+/g," ").replace(/\b\w/g,c=>c.toUpperCase());
+  return `<div class="ix-card newc" data-newemail="${escapeHTML(email)}">
+    <div class="ix-head">➕ <span class="who">New contact</span><span class="reason">${escapeHTML(email)}</span></div>
+    <div class="ix-row"><input type="checkbox" class="ix-do-create" checked>
+      <div class="ix-field"><label>Create member</label><br><input type="text" class="ix-new-name" value="${escapeHTML(guess)}" placeholder="Name"></div></div>
+    <div class="ix-row"><input type="checkbox" class="ix-do-note" checked>
+      <div class="ix-field"><label>…and add this as their first note</label><textarea class="ix-note">${escapeHTML(noteText)}</textarea></div></div>
+  </div>`;
+}
+
+function inboxApply(){
+  const out = document.getElementById("inboxOut");
+  const today = isoLocal(new Date());
+  let notes=0, reminders=0, created=0;
+
+  out.querySelectorAll(".ix-card").forEach(card=>{
+    let m;
+    if(card.dataset.newemail){
+      const create = card.querySelector(".ix-do-create");
+      if(create && create.checked){
+        const name = (card.querySelector(".ix-new-name").value || "").trim() || card.dataset.newemail;
+        m = { id:uid(), createdAt:today, data:{ name, email:card.dataset.newemail }, log:[], snoozed:{}, snoozedUntil:{} };
+        db.members.push(m); created++;
+      } else return;
+    } else {
+      m = db.members.find(x=>x.id===card.dataset.mid);
+    }
+    if(!m) return;
+    ensureMemberMeta(m);
+    const noteCb = card.querySelector(".ix-do-note");
+    if(noteCb && noteCb.checked){
+      const note = (card.querySelector(".ix-note").value || "").trim();
+      if(note){ m.log.push({ date:today, channel:"message", note }); notes++; }
+    }
+    const remCb = card.querySelector(".ix-do-remind");
+    if(remCb && remCb.checked){
+      const date = card.querySelector(".ix-remind-date").value;
+      if(date){ if(!Array.isArray(m.data.dates)) m.data.dates=[]; m.data.dates.push({ type:"Follow-up", date, recurrence:"once" }); reminders++; }
+    }
+  });
+
+  if(!notes && !reminders && !created){ toast("Nothing selected to apply"); return; }
+  save();
+  document.getElementById("inboxText").value = "";
+  document.getElementById("inboxStatus").textContent = "";
+  document.getElementById("inboxOut").innerHTML = `<div class="empty"><div class="big">✓</div><h3>Done</h3><p>Added ${notes} note${notes===1?"":"s"}${reminders?`, ${reminders} reminder${reminders===1?"":"s"}`:""}${created?`, ${created} new member${created===1?"":"s"}`:""}.</p></div>`;
+  inboxResult = null;
+  renderStats(); refreshLabelFilter(); renderMembers();
+  const parts = [];
+  if(notes) parts.push(`${notes} note${notes===1?"":"s"}`);
+  if(reminders) parts.push(`${reminders} reminder${reminders===1?"":"s"}`);
+  if(created) parts.push(`${created} new`);
+  toast("Applied: " + parts.join(" · "));
+}
+
+function clearInbox(){
+  document.getElementById("inboxText").value = "";
+  document.getElementById("inboxStatus").textContent = "";
+  document.getElementById("inboxOut").innerHTML = "";
+  inboxResult = null;
+}
+
+/* ───────────────────────── Templates editor ───────────────────────── */
+let tplDraft = [];
+function openTemplates(){
+  tplDraft = JSON.parse(JSON.stringify(db.templates));
+  renderTplList();
+  const samples = db.voiceSamples || [];
+  document.getElementById("voiceSamplesInput").value = samples.join("\n\n");
+  document.getElementById("voiceCount").textContent = samples.length ? `· learned from ${samples.length} message${samples.length===1?"":"s"}` : "· nothing learned yet";
+  document.getElementById("tplModal").classList.add("open");
+}
+function closeTemplates(){ document.getElementById("tplModal").classList.remove("open"); }
+function renderTplList(){
+  const body = document.getElementById("tplBody");
+  body.innerHTML = tplDraft.map((t,i)=>`
+    <div class="tpl-item" data-i="${i}">
+      <div class="tpl-row1">
+        <input class="tpl-name" data-k="name" value="${escapeHTML(t.name||"")}" placeholder="Template name">
+        <input class="tpl-applies" data-k="appliesTo" value="${escapeHTML(t.appliesTo||"")}" placeholder="Applies to (date type, or 'cold')">
+        <button class="tpl-del" title="Delete">✕</button>
+      </div>
+      <input data-k="subject" value="${escapeHTML(t.subject||"")}" placeholder="Email subject">
+      <textarea data-k="body" placeholder="Message body">${escapeHTML(t.body||"")}</textarea>
+    </div>`).join("") || `<p style="color:var(--grey);font-size:0.85rem">No templates. Add one — or drafts will use a friendly default.</p>`;
+
+  body.querySelectorAll(".tpl-item").forEach(item=>{
+    const i = +item.dataset.i;
+    item.querySelectorAll("[data-k]").forEach(inp=>{
+      inp.oninput = ()=>{ tplDraft[i][inp.dataset.k] = inp.value; };
+    });
+    item.querySelector(".tpl-del").onclick = ()=>{ tplDraft.splice(i,1); renderTplList(); };
+  });
+}
+function addTemplate(){ tplDraft.push({ id:uid(), name:"", appliesTo:"", subject:"", body:"" }); renderTplList(); }
+function saveTemplates(){
+  db.templates = tplDraft.filter(t=> (t.name||t.appliesTo||t.body||"").trim() );
+  // voice samples: split on blank lines, trim, dedup, cap
+  const raw = document.getElementById("voiceSamplesInput").value || "";
+  const samples = [...new Set(raw.split(/\n\s*\n+/).map(s=>s.trim()).filter(s=>s.length>=15))].slice(-25);
+  db.voiceSamples = samples;
+  save(); closeTemplates();
+  if(document.querySelector(".tab.active").dataset.tab==="outreach") renderOutreach();
+  toast("Saved");
+}
+
+/* ───────────────────────── Render: fields ───────────────────────── */
+function renderFields(){
+  document.getElementById("cFields").textContent = db.fields.length;
+  const list = document.getElementById("fieldsList");
+  const typeLabel = t => t==="datelist" ? "Dates" : (FIELD_TYPES.find(x=>x.type===t)||{label:t}).label;
+  list.innerHTML = sortedFields().map(f=>{
+    const meta = [];
+    if(f.required) meta.push("required");
+    if(f.showInTable) meta.push("in table");
+    if((f.type==="select"||f.type==="datelist") && f.options && f.options.length) meta.push(f.options.length+(f.type==="datelist"?" types":" options"));
+    // datelist (Dates) is built-in but its type list is editable
+    const editable = !f.system || f.type==="datelist";
+    const btnLabel = f.type==="datelist" ? "Edit types" : "Edit";
+    return `<div class="field-row" data-id="${f.id}">
+      <span class="ftype">${escapeHTML(typeLabel(f.type))}</span>
+      <div><span class="flabel">${escapeHTML(f.label)}</span> ${meta.length?`<span class="fmeta">· ${meta.join(" · ")}</span>`:""}</div>
+      <div class="spacer"></div>
+      ${editable ? `<button class="btn ghost sm" data-edit>${btnLabel}</button>` : `<span class="badge-sys">built-in</span>`}
+    </div>`;
+  }).join("");
+
+  list.querySelectorAll(".field-row").forEach(row=>{
+    const f = fieldById(row.dataset.id);
+    const btn = row.querySelector("button[data-edit]");
+    if(btn) btn.onclick = ()=>openFieldModal(f.id);
+  });
+}
+
+/* ───────────────────────── Member drawer ───────────────────────── */
+let editingMemberId = null;
+
+function inputForField(f, value){
+  const v = value;
+  const id = "inp_"+f.id;
+  switch(f.type){
+    case "textarea":
+      return `<textarea id="${id}" data-field="${f.id}">${escapeHTML(v||"")}</textarea>`;
+    case "select":
+      const opts = (f.options||[]).map(o=>`<option value="${escapeHTML(o)}" ${o===v?"selected":""}>${escapeHTML(o)}</option>`).join("");
+      return `<select id="${id}" data-field="${f.id}"><option value="">— none —</option>${opts}</select>`;
+    case "boolean":
+      return `<label class="toggle"><input type="checkbox" id="${id}" data-field="${f.id}" ${v?"checked":""}><span class="track"></span><span class="tlabel">${v?"Yes":"No"}</span></label>`;
+    case "tags":
+      return tagsInputHTML(f.id, v||[]);
+    case "date":
+      return `<input type="date" id="${id}" data-field="${f.id}" value="${escapeHTML(v||"")}">`;
+    case "number":
+      return `<input type="number" id="${id}" data-field="${f.id}" value="${escapeHTML(v==null?"":v)}">`;
+    case "email":
+      return `<input type="email" id="${id}" data-field="${f.id}" value="${escapeHTML(v||"")}" placeholder="name@example.com">`;
+    case "url":
+      return `<input type="url" id="${id}" data-field="${f.id}" value="${escapeHTML(v||"")}" placeholder="https://">`;
+    case "phone":
+      return `<input type="text" inputmode="tel" id="${id}" data-field="${f.id}" value="${escapeHTML(v||"")}" placeholder="+1 555 000 0000">`;
+    case "datelist":
+      return dateListHTML(f, v||[]);
+    default:
+      return `<input type="text" id="${id}" data-field="${f.id}" value="${escapeHTML(v||"")}">`;
+  }
+}
+
+function tagsInputHTML(fid, tags){
+  return `<div class="tags-input" data-tags="${fid}">
+    ${tags.map(t=>`<span class="tag">${escapeHTML(t)}<button type="button" data-rm="${escapeHTML(t)}">✕</button></span>`).join("")}
+    <input type="text" placeholder="Add label…">
+  </div>`;
+}
+
+function dateRowHTML(f, e, dlid){
+  e = e || {};
+  const recOpts = RECURRENCE.map(r=>`<option value="${r.v}" ${(e.recurrence||"yearly")===r.v?"selected":""}>${r.label}</option>`).join("");
+  return `<div class="dl-row">
+    <input class="dl-type" list="${dlid}" placeholder="Type" value="${escapeHTML(e.type||"")}">
+    <input class="dl-date" type="date" value="${escapeHTML(e.date||"")}">
+    <select class="dl-rec">${recOpts}</select>
+    <button type="button" class="dl-rm" title="Remove">✕</button>
+  </div>`;
+}
+function dateListHTML(f, entries){
+  const dlid = "dl_"+f.id;
+  const rows = entries.filter(e=>e).map(e=>dateRowHTML(f, e, dlid)).join("");
+  return `<div class="datelist" data-datelist="${f.id}" data-dl="${dlid}">
+    <datalist id="${dlid}">${(f.options||[]).map(o=>`<option value="${escapeHTML(o)}"></option>`).join("")}</datalist>
+    <div class="dl-rows">${rows}</div>
+    <button type="button" class="btn ghost sm dl-add">+ Add date</button>
+  </div>`;
+}
+function wireDateList(container){
+  const fid = container.dataset.datelist, dlid = container.dataset.dl;
+  const rows = container.querySelector(".dl-rows");
+  const wireRemovers = ()=> rows.querySelectorAll(".dl-rm").forEach(b=>b.onclick=()=>b.closest(".dl-row").remove());
+  container.querySelector(".dl-add").onclick = ()=>{
+    rows.insertAdjacentHTML("beforeend", dateRowHTML(fieldById(fid), {recurrence:"yearly"}, dlid));
+    wireRemovers();
+    const last = rows.lastElementChild; if(last){ const t=last.querySelector(".dl-type"); if(t) t.focus(); }
+  };
+  wireRemovers();
+}
+
+window.openMember = function(id){
+  editingMemberId = id || null;
+  const m = id ? db.members.find(x=>x.id===id) : { data:{} };
+  const isNew = !id;
+
+  document.getElementById("drawerTitle").textContent = isNew ? "New member" : memberName(m);
+  document.getElementById("drawerSub").textContent = isNew ? "" : (memberEmail(m) || "");
+  const av = document.getElementById("drawerAvatar");
+  av.textContent = initials(isNew ? "" : memberName(m));
+  av.style.background = colorFor(isNew ? " " : memberName(m));
+
+  document.getElementById("btnDeleteMember").style.display = isNew ? "none" : "";
+
+  const body = document.getElementById("drawerBody");
+  const fieldsHtml = sortedFields().map(f=>{
+    const req = f.required ? ` <span style="color:#dc2626">*</span>` : "";
+    const hint = f.type==="datelist" ? ` <span class="hint">· recurring & future dates show in Upcoming</span>` : "";
+    return `<div class="form-group">
+      <label>${escapeHTML(f.label)}${req}${hint}</label>
+      ${inputForField(f, m.data[f.id])}
+    </div>`;
+  }).join("");
+
+  body.innerHTML = (isNew ? "" : `<div class="drawer-tabs">
+      <button type="button" class="dtab active" data-pane="details">Details</button>
+      <button type="button" class="dtab" data-pane="activity">Activity <span class="dtab-n" id="dtabActN"></span></button>
+    </div>`)
+    + `<div id="paneDetails">${fieldsHtml}</div>`
+    + (isNew ? "" : `<div id="paneActivity" class="hide"><div class="activity" id="activitySection"></div></div>`);
+
+  if(!isNew){
+    renderActivity(m);
+    body.querySelectorAll(".dtab").forEach(t=> t.onclick = ()=>{
+      body.querySelectorAll(".dtab").forEach(x=>x.classList.toggle("active", x===t));
+      document.getElementById("paneDetails").classList.toggle("hide", t.dataset.pane!=="details");
+      document.getElementById("paneActivity").classList.toggle("hide", t.dataset.pane!=="activity");
+      body.scrollTop = 0;
+    });
+  }
+
+  // wire tags inputs + date lists + boolean toggles + live name avatar
+  body.querySelectorAll(".tags-input").forEach(wireTagsInput);
+  body.querySelectorAll(".datelist").forEach(wireDateList);
+  body.querySelectorAll('input[type=checkbox][data-field]').forEach(cb=>{
+    cb.onchange = ()=>{ const lbl=cb.parentElement.querySelector(".tlabel"); if(lbl) lbl.textContent = cb.checked?"Yes":"No"; };
+  });
+  const nameInput = body.querySelector('[data-field="name"]');
+  if(nameInput) nameInput.oninput = ()=>{
+    const av = document.getElementById("drawerAvatar");
+    const nm = nameInput.value || "";
+    av.textContent = initials(nm); av.style.background = colorFor(nm||" ");
+    document.getElementById("drawerTitle").textContent = nm.trim()||"New member";
+  };
+
+  openDrawer();
+};
+
+/* ── Activity / interaction log ── */
+const CHANNEL_META = {
+  call:     { ico:"📞", label:"Call" },
+  met:      { ico:"🤝", label:"Met up" },
+  email:    { ico:"📧", label:"Email" },
+  whatsapp: { ico:"💬", label:"WhatsApp" },
+  message:  { ico:"✉️", label:"Message" },
+  note:     { ico:"📝", label:"Note" },
+  manual:   { ico:"✓", label:"Logged" },
+};
+const LOG_KINDS = ["call","met","email","whatsapp","message","note"];
+function channelMeta(c){ return CHANNEL_META[c] || { ico:"•", label:(c||"Logged") }; }
+function relDay(iso){
+  const n = daysSince(iso);
+  if(n===0) return "Today";
+  if(n===1) return "Yesterday";
+  if(n<7) return `${n} days ago`;
+  return fmtDate(iso);
+}
+
+function renderActivity(m){
+  ensureMemberMeta(m);
+  const sec = document.getElementById("activitySection");
+  if(!sec) return;
+  // newest first, stable on equal dates
+  const ordered = m.log.map((e,i)=>({e,i})).sort((a,b)=> a.e.date<b.e.date?1 : a.e.date>b.e.date?-1 : b.i-a.i);
+  const last = lastContactISO(m);
+  const kindOpts = LOG_KINDS.map(k=>`<option value="${k}">${channelMeta(k).ico} ${channelMeta(k).label}</option>`).join("");
+
+  sec.innerHTML = `
+    <div class="last-contact">${last ? "Last contacted " + relDay(last).toLowerCase() : "No contact logged yet"}</div>
+    <div class="act-add">
+      <select class="act-kind">${kindOpts}</select>
+      <input type="text" class="act-note" placeholder="What happened? (optional)">
+      <button type="button" class="act-add-btn">Log it</button>
+      <div class="act-add-date"><input type="date" class="act-date" value="${isoLocal(new Date())}"></div>
+    </div>
+    <div class="act-list">${
+      ordered.length ? ordered.map(({e,i})=>{
+        const meta = channelMeta(e.channel);
+        const primary = e.note ? escapeHTML(e.note) : (e.type ? escapeHTML(e.type) : meta.label);
+        return `<div class="act-row">
+          <div class="act-ico">${meta.ico}</div>
+          <div class="act-body"><div class="act-primary">${primary}</div><div class="act-meta">${escapeHTML(meta.label)} · ${escapeHTML(relDay(e.date))}</div></div>
+          <button type="button" class="act-del" data-i="${i}" title="Delete">✕</button>
+        </div>`;
+      }).join("") : `<div class="act-empty">No interactions yet — log a call, a coffee, a message…</div>`
+    }</div>`;
+
+  sec.querySelector(".act-add-btn").onclick = ()=>{
+    const kind = sec.querySelector(".act-kind").value;
+    const note = sec.querySelector(".act-note").value.trim();
+    const date = sec.querySelector(".act-date").value || isoLocal(new Date());
+    addLogEntry(m, { date, channel:kind, note: note || undefined });
+  };
+  sec.querySelectorAll(".act-del").forEach(b=> b.onclick = ()=> deleteLogEntry(m, +b.dataset.i));
+
+  const tabN = document.getElementById("dtabActN"); if(tabN) tabN.textContent = m.log.length || "";
+}
+
+function addLogEntry(m, entry){
+  ensureMemberMeta(m);
+  m.log.push(entry);
+  save(); renderActivity(m); renderStats();
+  toast("Interaction logged");
+}
+function deleteLogEntry(m, idx){
+  ensureMemberMeta(m);
+  m.log.splice(idx, 1);
+  save(); renderActivity(m); renderStats();
+  toast("Removed");
+}
+
+function wireTagsInput(container){
+  const fid = container.dataset.tags;
+  const input = container.querySelector("input");
+  const getTags = ()=> [...container.querySelectorAll(".tag")].map(t=>t.firstChild.textContent);
+  function addTag(val){
+    val = val.trim(); if(!val) return;
+    if(getTags().includes(val)){ input.value=""; return; }
+    const span = document.createElement("span");
+    span.className="tag";
+    span.innerHTML = `${escapeHTML(val)}<button type="button">✕</button>`;
+    span.querySelector("button").onclick = ()=>span.remove();
+    container.insertBefore(span, input);
+    input.value="";
+  }
+  input.onkeydown = e=>{
+    if(e.key==="Enter" || e.key===","){ e.preventDefault(); addTag(input.value); }
+    else if(e.key==="Backspace" && !input.value){ const last=container.querySelectorAll(".tag"); if(last.length) last[last.length-1].remove(); }
+  };
+  input.onblur = ()=>addTag(input.value);
+  container.querySelectorAll(".tag button").forEach(b=>b.onclick=()=>b.parentElement.remove());
+  container.onclick = e=>{ if(e.target===container) input.focus(); };
+}
+
+function collectDrawerData(){
+  const data = {};
+  document.querySelectorAll("#drawerBody [data-field]").forEach(el=>{
+    const f = fieldById(el.dataset.field);
+    if(!f) return;
+    if(f.type==="boolean") data[f.id] = el.checked;
+    else if(f.type==="number"){ data[f.id] = el.value===""?null:Number(el.value); }
+    else data[f.id] = el.value.trim();
+  });
+  document.querySelectorAll("#drawerBody .tags-input").forEach(c=>{
+    data[c.dataset.tags] = [...c.querySelectorAll(".tag")].map(t=>t.firstChild.textContent);
+  });
+  document.querySelectorAll("#drawerBody .datelist").forEach(c=>{
+    const arr = [];
+    c.querySelectorAll(".dl-row").forEach(r=>{
+      const date = r.querySelector(".dl-date").value;
+      if(!date) return; // skip incomplete rows
+      arr.push({
+        type: r.querySelector(".dl-type").value.trim(),
+        date,
+        recurrence: r.querySelector(".dl-rec").value,
+      });
+    });
+    data[c.dataset.datelist] = arr;
+  });
+  return data;
+}
+
+function saveMember(){
+  const data = collectDrawerData();
+  if(!(data.name||"").trim()){ toast("Name is required"); return; }
+  if(editingMemberId){
+    const m = db.members.find(x=>x.id===editingMemberId);
+    m.data = data;
+  } else {
+    const now = new Date();
+    db.members.push({ id:uid(), createdAt: now.toISOString().slice(0,10), data });
+  }
+  save(); closeDrawer(); renderAll();
+  toast(editingMemberId ? "Member updated" : "Member added");
+}
+
+function deleteMember(){
+  if(!editingMemberId) return;
+  if(!confirm("Delete this member? This can't be undone.")) return;
+  db.members = db.members.filter(x=>x.id!==editingMemberId);
+  save(); closeDrawer(); renderAll(); toast("Member deleted");
+}
+
+function openDrawer(){ document.getElementById("scrim").classList.add("open"); document.getElementById("drawer").classList.add("open"); }
+function closeDrawer(){ document.getElementById("scrim").classList.remove("open"); document.getElementById("drawer").classList.remove("open"); editingMemberId=null; }
+
+/* ───────────────────────── Field modal ───────────────────────── */
+let editingFieldId = null, selectedType = "text";
+
+function renderTypeGrid(){
+  document.getElementById("typeGrid").innerHTML = FIELD_TYPES.map(t=>
+    `<div class="type-opt ${t.type===selectedType?"sel":""}" data-type="${t.type}"><span class="ico">${t.ico}</span>${t.label}</div>`
+  ).join("");
+  document.querySelectorAll(".type-opt").forEach(o=>o.onclick=()=>{
+    selectedType = o.dataset.type; renderTypeGrid(); reflectTypeUI();
+  });
+}
+function reflectTypeUI(){
+  const isDateList = selectedType==="datelist";
+  document.getElementById("typeGroup").classList.toggle("hide", isDateList); // Dates field type is fixed
+  document.getElementById("optionsGroup").classList.toggle("hide", !(selectedType==="select" || isDateList));
+  document.getElementById("optionsLabel").innerHTML = isDateList
+    ? `Date types <span class="hint">(one per line — for the dropdown)</span>`
+    : `Options <span class="hint">(one per line)</span>`;
+}
+
+window.openFieldModal = function(id){
+  editingFieldId = id || null;
+  const f = id ? fieldById(id) : null;
+  document.getElementById("fieldModalTitle").textContent = (f && f.type==="datelist") ? "Edit date types" : (id ? "Edit field" : "New field");
+  document.getElementById("fName").value = f ? f.label : "";
+  selectedType = f ? f.type : "text";
+  document.getElementById("fOptions").value = f && f.options ? f.options.join("\n") : "";
+  document.getElementById("fShowTable").checked = f ? !!f.showInTable : false;
+  // built-in fields (e.g. Dates) can be edited but not deleted
+  document.getElementById("btnDeleteField").classList.toggle("hide", !id || !!(f && f.system));
+  renderTypeGrid(); reflectTypeUI();
+  document.getElementById("fieldModal").classList.add("open");
+  setTimeout(()=>document.getElementById("fName").focus(), 50);
+};
+
+function closeFieldModal(){ document.getElementById("fieldModal").classList.remove("open"); editingFieldId=null; }
+
+function saveField(){
+  const label = document.getElementById("fName").value.trim();
+  if(!label){ toast("Field name required"); return; }
+  const hasOptions = selectedType==="select" || selectedType==="datelist";
+  const options = hasOptions
+    ? document.getElementById("fOptions").value.split("\n").map(s=>s.trim()).filter(Boolean)
+    : undefined;
+  if(selectedType==="select" && (!options||!options.length)){ toast("Add at least one option"); return; }
+  const showInTable = document.getElementById("fShowTable").checked;
+
+  if(editingFieldId){
+    const f = fieldById(editingFieldId);
+    f.label = label; f.type = selectedType; f.options = options; f.showInTable = showInTable;
+  } else {
+    const maxOrder = Math.max(0, ...db.fields.map(f=>f.order??0));
+    db.fields.push({ id:uid(), label, type:selectedType, options, showInTable, order:maxOrder+1 });
+  }
+  save(); closeFieldModal(); renderAll();
+  toast(editingFieldId ? "Field updated" : "Field added");
+}
+
+function deleteField(){
+  if(!editingFieldId) return;
+  const f = fieldById(editingFieldId);
+  if(f.system){ toast("Built-in fields can't be deleted"); return; }
+  if(!confirm(`Delete field “${f.label}”? Existing values for it will be removed from all members.`)) return;
+  db.fields = db.fields.filter(x=>x.id!==editingFieldId);
+  db.members.forEach(m=>{ delete m.data[editingFieldId]; });
+  save(); closeFieldModal(); renderAll(); toast("Field deleted");
+}
+
+/* ───────────────────────── Tabs ───────────────────────── */
+function switchTab(name){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active", t.dataset.tab===name));
+  ["outreach","inbox","members","upcoming","fields"].forEach(n=>document.getElementById("tab-"+n).classList.toggle("hide", n!==name));
+  if(name==="outreach") renderOutreach();
+  if(name==="upcoming") renderUpcoming();
+  if(name==="fields") renderFields();
+}
+window.switchTab = switchTab;
+
+/* ───────────────────────── Backup (JSON) + nudge ───────────────────────── */
+let backupDismissed = false;
+
+function exportData(){
+  db.lastBackup = isoLocal(new Date()); save();
+  const blob = new Blob([JSON.stringify(db,null,2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `tribe-backup-${db.lastBackup}.json`;
+  a.click(); URL.revokeObjectURL(a.href);
+  renderBackupNudge();
+  toast("Backup downloaded");
+}
+function importData(file){
+  const reader = new FileReader();
+  reader.onload = e=>{
+    try {
+      const d = JSON.parse(e.target.result);
+      if(!d.fields || !d.members) throw new Error("bad");
+      if(!confirm("Replace all current data with this backup?")) return;
+      db = migrate(d); save(); backupDismissed=false; renderAll(); toast("Data imported");
+    } catch(err){ toast("Couldn't read that file"); }
+  };
+  reader.readAsText(file);
+}
+
+function renderBackupNudge(){
+  const banner = document.getElementById("backupBanner");
+  const msg = document.getElementById("backupMsg");
+  const btn = document.getElementById("btnBackupNow");
+  if(sbOn()){ banner.classList.add("hide"); return; }                 // synced to your cloud → stay quiet
+  const show = db.members.length > 0 && !backupDismissed;
+  banner.classList.toggle("hide", !show);
+  if(show){
+    msg.textContent = "Your data lives only on this device. Sign in to keep it safe and synced across your devices.";
+    if(btn) btn.textContent = "Sign in";
+  }
+}
+const AUTO_SYNC_DELAY = 6000;   // debounce (ms) for cloud sync
+
+/* ─────────── Cloud sync (Supabase) — one shared project, per-user accounts, passwordless ─────────── */
+// Set these once to YOUR Supabase project. The anon key is a PUBLIC client key — safe to ship in the app.
+const SB_URL = "https://mmxnzebskopbbeepvpvq.supabase.co";
+const SB_ANON_KEY = "sb_publishable_H3V1vTQYytSoFxFaTyDFfA_84JljPe2";
+function sbConfigured(){ return /^https?:\/\//.test(SB_URL) && SB_ANON_KEY.length > 20; }
+
+let sbClient = null, sbUser = null, sbState = "off", sbSyncTimer = null, lastSbSnapshot = null, sbPendingEmail = "";
+function sbOn(){ return sbState==="ready" && sbClient && sbUser; }
+
+function setSbStatus(t){ const el=document.getElementById("sbStatus"); if(el) el.textContent=t; }
+function setSbDot(s){
+  const d=document.getElementById("sbDot"); if(d) d.className = "sync-dot " + (s==="idle"?"hide":s);
+  const b=document.getElementById("btnSb");
+  if(b) b.title = s==="ok" ? "Cloud sync · synced ✓" : s==="syncing" ? "Cloud syncing…" : s==="fail" ? "Cloud sync failed — click to check" : s==="pending" ? "Offline — saved locally, will sync when you reconnect" : "Cloud sync";
+}
+function updateSbUI(){
+  document.getElementById("btnSbSignout").classList.toggle("hide", !sbOn());
+  const b = document.getElementById("btnSb"), ava = document.getElementById("acctAva"), label = document.getElementById("acctLabel");
+  if(sbOn()){
+    const email = (sbUser && sbUser.email) || "";
+    b.classList.add("signed-in");
+    ava.textContent = (email[0] || "?").toUpperCase(); ava.classList.remove("hide");
+    label.classList.add("hide");
+    setSbDot("ok");
+    b.title = "Signed in as " + email + " — click to manage";   // after setSbDot so this wins
+  } else {
+    b.classList.remove("signed-in");
+    ava.classList.add("hide");
+    label.textContent = "Sign in"; label.classList.remove("hide");
+    setSbDot("idle");
+    b.title = "Sign in to sync & back up across devices";
+  }
+  renderBackupNudge();
+}
+
+async function getSupabaseClient(){
+  if(sbClient) return sbClient;
+  const m = await import("https://esm.sh/@supabase/supabase-js@2");
+  sbClient = m.createClient(SB_URL, SB_ANON_KEY, { auth:{ persistSession:true, storageKey:"tribe_sb_session", autoRefreshToken:true, detectSessionInUrl:true } });
+  // catches sign-in via a clicked magic link (when the app is hosted at a URL)
+  sbClient.auth.onAuthStateChange(async (_e, session)=>{
+    if(session && session.user && !sbOn()){
+      sbUser = session.user;
+      try { await sbPull(); sbState="ready"; lastSbSnapshot = JSON.stringify(db); setSbStatus(`Signed in as ${sbUser.email} · synced`); updateSbUI(); toast("Cloud sync on ✓"); } catch(e){ setSbDot("fail"); }
+    }
+  });
+  return sbClient;
+}
+
+// step 1 — email a one-time link + code
+async function sbSendCode(){
+  if(!sbConfigured()){ setSbStatus("Cloud sync isn't set up in this build yet."); return; }
+  const email = document.getElementById("sbEmail").value.trim();
+  if(!email){ setSbStatus("Enter your email first."); return; }
+  setSbStatus("Sending…");
+  try {
+    const c = await getSupabaseClient();
+    // bring the magic link back to THIS page (not the project's Site URL / toolkit home)
+    const { error } = await c.auth.signInWithOtp({ email, options:{ shouldCreateUser:true, emailRedirectTo: location.origin + location.pathname } });
+    if(error) throw error;
+    sbPendingEmail = email;
+    document.getElementById("sbCodeRow").classList.remove("hide");
+    document.getElementById("btnSbSendCode").classList.add("hide");
+    document.getElementById("btnSbVerify").classList.remove("hide");
+    setSbStatus("Check your email — enter the 6-digit code below, or just click the link.");
+    setTimeout(()=>{ const el=document.getElementById("sbCode"); if(el) el.focus(); }, 50);
+  } catch(err){ console.error("OTP send failed:", err); setSbStatus("Couldn't send: " + sbErrText(err)); }
+}
+function sbErrText(err){
+  if(!err) return "unknown error";
+  return err.message || err.msg || err.error_description || err.error || (err.status ? ("server error " + err.status) : "") || "the email server rejected it — check Resend logs";
+}
+
+// step 2 — verify the typed code
+async function sbVerifyCode(){
+  const code = document.getElementById("sbCode").value.trim();
+  if(!code){ setSbStatus("Enter the code from your email."); return; }
+  setSbStatus("Signing in…"); setSbDot("syncing");
+  try {
+    const c = await getSupabaseClient();
+    // new signups verify with type "signup"; returning logins with "email" — try both
+    let data, error;
+    for(const type of ["email","signup"]){
+      ({ data, error } = await c.auth.verifyOtp({ email: sbPendingEmail, token: code, type }));
+      if(!error) break;
+    }
+    if(error) throw error;
+    sbUser = data.user;
+    await sbPull();
+    sbState = "ready"; lastSbSnapshot = JSON.stringify(db);
+    // reset the form, then re-render the modal into its signed-in "account" view
+    document.getElementById("sbCodeRow").classList.add("hide");
+    document.getElementById("btnSbVerify").classList.add("hide");
+    document.getElementById("btnSbSendCode").classList.remove("hide");
+    document.getElementById("sbCode").value = "";
+    updateSbUI(); openSb();
+    toast(`Signed in as ${sbUser.email} ✓`);
+  } catch(err){ sbState="error"; setSbStatus("That code didn't work: " + sbErrText(err)); setSbDot("fail"); }
+}
+
+async function sbPull(){
+  const { data, error } = await sbClient.from("tribe_data").select("data").eq("user_id", sbUser.id).maybeSingle();
+  if(error) throw error;
+  if(data && data.data){
+    let remote; try { remote = JSON.parse(data.data); } catch(e){ remote = null; }
+    if(remote && remote.fields && remote.members){
+      const localHasData = db.members.length > 0;
+      if(!localHasData || confirm("Found your account's data in the cloud. Use the cloud copy (replaces what's in this browser)?")){
+        db = migrate(remote); localStorage.setItem(KEY, JSON.stringify(db)); backupDismissed=false; renderAll();
+      } else { await sbPush(); }
+    }
+  } else { await sbPush(); }   // no cloud row yet → seed from local
+}
+async function sbPush(){
+  if(!sbClient || !sbUser) return false;
+  const { error } = await sbClient.from("tribe_data").upsert({ user_id: sbUser.id, data: JSON.stringify(db), updated_at: new Date().toISOString() });
+  if(error) throw error;
+  lastSbSnapshot = JSON.stringify(db);
+  return true;
+}
+function scheduleSupabaseSync(){
+  if(!sbOn()) return;
+  clearTimeout(sbSyncTimer);
+  sbSyncTimer = setTimeout(async ()=>{
+    if(JSON.stringify(db) === lastSbSnapshot) return;
+    if(!navigator.onLine){ setSbDot("pending"); return; }
+    setSbDot("syncing");
+    try { await sbPush(); setSbDot("ok"); } catch(e){ setSbDot(navigator.onLine ? "fail" : "pending"); setSbStatus("Sync failed: "+e.message); }
+  }, AUTO_SYNC_DELAY);
+}
+
+// reconnect silently on load using the persisted session (also handles a clicked magic link via detectSessionInUrl)
+async function sbInit(){
+  if(!sbConfigured()) return;
+  try {
+    const c = await getSupabaseClient();
+    const { data } = await c.auth.getSession();
+    if(!data.session){ setSbDot("idle"); return; }
+    sbUser = data.session.user;
+    await sbPull();
+    sbState = "ready"; lastSbSnapshot = JSON.stringify(db); updateSbUI();
+  } catch(e){ setSbDot(navigator.onLine ? "fail" : "pending"); }
+}
+
+function flushSync(){
+  if(!navigator.onLine || !sbConfigured()) return;
+  if(sbOn()){
+    if(JSON.stringify(db) !== lastSbSnapshot){
+      setSbDot("syncing");
+      sbPush().then(()=>setSbDot("ok")).catch(()=>setSbDot(navigator.onLine ? "fail" : "pending"));
+    }
+  } else { sbInit(); }
+}
+
+function openSb(){
+  const title = document.getElementById("sbTitle");
+  const body = document.getElementById("sbModal").querySelector(".modal-body");
+  if(sbOn()){
+    if(title) title.textContent = "Your account";
+    setSbStatus(`Signed in as ${sbUser.email} · your data is syncing to the cloud.`);
+    if(body) body.style.display = "none";   // signed in → just show status + Sign out
+  } else {
+    if(title) title.textContent = "Sign in";
+    setSbStatus(sbConfigured() ? "Sync your data to the cloud and across your devices — no password, we email you a code." : "Cloud sync isn't configured in this build yet.");
+    if(body) body.style.display = "";
+  }
+  document.getElementById("btnSbSignout").classList.toggle("hide", !sbOn());
+  document.getElementById("sbModal").classList.add("open");
+  setTimeout(()=>{ const el=document.getElementById("sbEmail"); if(el && !sbOn()) el.focus(); }, 50);
+}
+function closeSb(){ document.getElementById("sbModal").classList.remove("open"); }
+async function sbSignOut(){
+  if(!confirm("Sign out on this browser? Your cloud data stays safe.")) return;
+  try { if(sbClient) await sbClient.auth.signOut(); } catch(e){}
+  localStorage.removeItem("tribe_sb_session");
+  sbUser=null; sbState="off"; setSbDot("idle");
+  ["sbEmail","sbCode"].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=""; });
+  document.getElementById("sbCodeRow").classList.add("hide");
+  document.getElementById("btnSbVerify").classList.add("hide");
+  document.getElementById("btnSbSendCode").classList.remove("hide");
+  updateSbUI(); openSb(); toast("Signed out");   // re-render modal to the sign-in view
+}
+
+
+/* ───────────────────────── CSV import ───────────────────────── */
+let csvState = null; // { headers, rows, mapping:{i:target}, dateOrder, skipDupes }
+
+function parseCSV(text){
+  text = text.replace(/^﻿/, "");
+  const rows = []; let row = [], cur = "", inQ = false, i = 0;
+  while(i < text.length){
+    const c = text[i];
+    if(inQ){
+      if(c === '"'){ if(text[i+1] === '"'){ cur += '"'; i += 2; continue; } inQ = false; i++; continue; }
+      cur += c; i++; continue;
+    }
+    if(c === '"'){ inQ = true; i++; continue; }
+    if(c === ','){ row.push(cur); cur = ""; i++; continue; }
+    if(c === '\r'){ i++; continue; }
+    if(c === '\n'){ row.push(cur); rows.push(row); row = []; cur = ""; i++; continue; }
+    cur += c; i++;
+  }
+  if(cur.length || row.length){ row.push(cur); rows.push(row); }
+  return rows.filter(r => r.some(c => (c||"").trim() !== ""));
+}
+
+function importTargets(){
+  const base = [
+    { v:"ignore", label:"— Ignore —" },
+    { v:"name",   label:"Name (full)" },
+    { v:"first",  label:"First name" },
+    { v:"last",   label:"Last name" },
+    { v:"email",  label:"Email" },
+    { v:"phone",  label:"Phone" },
+    { v:"labels", label:"Labels" },
+    { v:"birthday", label:"Birthday (date)" },
+    { v:"notes",  label:"Notes" },
+  ];
+  // custom scalar fields as extra targets
+  db.fields.filter(f=> !f.system && !["labels","notes","phone","email"].includes(f.id) && !["datelist","tags"].includes(f.type))
+    .forEach(f=> base.push({ v:"f:"+f.id, label:"Field · "+f.label }));
+  return base;
+}
+
+function guessTarget(header){
+  const h = (header||"").toLowerCase().trim();
+  if(/(first|given).*name|^first$|^given$/.test(h)) return "first";
+  if(/(last|family|sur).*name|^last$|^surname$/.test(h)) return "last";
+  if(/^(full ?name|display ?name|name)$/.test(h) || h==="contact") return "name";
+  if(/e-?mail/.test(h)) return "email";
+  if(/phone|mobile|^tel/.test(h)) return "phone";
+  if(/birth|dob/.test(h)) return "birthday";
+  if(/label|tag|group|categor/.test(h)) return "labels";
+  if(/note|memo|comment/.test(h)) return "notes";
+  // exact match to a custom field label
+  const f = db.fields.find(x=> !x.system && (x.label||"").toLowerCase()===h);
+  if(f) return "f:"+f.id;
+  return "ignore";
+}
+
+function parseImportDate(str, order){
+  str = (str||"").trim(); if(!str) return null;
+  if(/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+  let m;
+  if(m = str.match(/^--(\d{2})-(\d{2})$/)) return `0000-${m[1]}-${m[2]}`;        // Google no-year
+  if(m = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)) return `${m[1]}-${String(+m[2]).padStart(2,"0")}-${String(+m[3]).padStart(2,"0")}`;
+  if(m = str.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})$/)){
+    let a=+m[1], b=+m[2], y=+m[3]; if(y<100) y+=2000;
+    let mo, da; if(order==="mdy"){ mo=a; da=b; } else { da=a; mo=b; }
+    if(mo>=1 && mo<=12 && da>=1 && da<=31) return `${String(y).padStart(4,"0")}-${String(mo).padStart(2,"0")}-${String(da).padStart(2,"0")}`;
+  }
+  const t = Date.parse(str);
+  if(!isNaN(t)) return isoLocal(new Date(t));
+  return null;
+}
+
+function openCsv(){
+  csvState = null;
+  document.getElementById("csvDrop").classList.remove("hide");
+  document.getElementById("csvMapping").classList.add("hide");
+  document.getElementById("btnDoImport").classList.add("hide");
+  document.getElementById("csvCount").textContent = "";
+  document.getElementById("csvSubhead").textContent = "Export from Google Contacts, Apple Contacts, or any spreadsheet, then drop the file here.";
+  document.getElementById("csvModal").classList.add("open");
+}
+function closeCsv(){ document.getElementById("csvModal").classList.remove("open"); csvState = null; }
+
+function handleCsvFile(file){
+  const reader = new FileReader();
+  reader.onload = e=>{
+    const rows = parseCSV(e.target.result);
+    if(rows.length < 2){ toast("That CSV has no rows"); return; }
+    const headers = rows[0];
+    const mapping = {};
+    headers.forEach((h,i)=> mapping[i] = guessTarget(h));
+    csvState = { headers, rows: rows.slice(1), mapping, dateOrder:"dmy", skipDupes:true };
+    renderCsvMapping();
+  };
+  reader.readAsText(file);
+}
+
+function renderCsvMapping(){
+  document.getElementById("csvDrop").classList.add("hide");
+  document.getElementById("csvMapping").classList.remove("hide");
+  document.getElementById("btnDoImport").classList.remove("hide");
+  document.getElementById("csvSubhead").textContent = "Match each column to a Tribe field. We guessed — adjust anything that's off.";
+
+  const targets = importTargets();
+  const tbl = document.getElementById("csvMapTable");
+  tbl.innerHTML = csvState.headers.map((h,i)=>{
+    const sample = (csvState.rows.find(r=>(r[i]||"").trim())||[])[i] || "";
+    const opts = targets.map(t=>`<option value="${t.v}" ${csvState.mapping[i]===t.v?"selected":""}>${escapeHTML(t.label)}</option>`).join("");
+    return `<div class="csv-maprow">
+      <div class="src"><div class="h">${escapeHTML(h||"(no header)")}</div><div class="sample">${escapeHTML(String(sample).slice(0,60))}</div></div>
+      <div class="arrow">→</div>
+      <select data-col="${i}" class="${csvState.mapping[i]==='ignore'?'ignored':''}">${opts}</select>
+    </div>`;
+  }).join("");
+
+  tbl.querySelectorAll("select[data-col]").forEach(sel=>{
+    sel.onchange = ()=>{ csvState.mapping[+sel.dataset.col] = sel.value; sel.classList.toggle("ignored", sel.value==="ignore"); updateCsvCount(); };
+  });
+  document.getElementById("csvSkipDupes").onchange = e=>{ csvState.skipDupes = e.target.checked; updateCsvCount(); };
+  document.getElementById("csvDateOrder").onchange = e=>{ csvState.dateOrder = e.target.value; };
+  updateCsvCount();
+}
+
+function buildImportRow(r){
+  const m = csvState.mapping;
+  const get = target => { for(const i in m){ if(m[i]===target && (r[i]||"").trim()) return r[i].trim(); } return ""; };
+  const getAll = target => { const out=[]; for(const i in m){ if(m[i]===target && (r[i]||"").trim()) out.push(r[i].trim()); } return out; };
+
+  let name = get("name");
+  if(!name){ name = [get("first"), get("last")].filter(Boolean).join(" "); }
+  const email = get("email");
+  if(!name && !email) return null; // nothing usable
+
+  const data = { name: name || email };
+  if(email) data.email = email;
+  const phone = get("phone"); if(phone) data.phone = phone;
+  const notes = get("notes"); if(notes) data.notes = notes;
+
+  const labels = [];
+  getAll("labels").forEach(v => v.split(/ ::: |[;,]/).map(s=>s.trim()).filter(Boolean).forEach(l=>{ if(!labels.includes(l)) labels.push(l); }));
+  if(labels.length) data.labels = labels;
+
+  // custom fields
+  for(const i in m){ if(m[i] && m[i].startsWith("f:") && (r[i]||"").trim()){ data[m[i].slice(2)] = r[i].trim(); } }
+
+  // birthday → dates entry
+  let dateUnparsed = false;
+  const bRaw = get("birthday");
+  if(bRaw){
+    const iso = parseImportDate(bRaw, csvState.dateOrder);
+    if(iso) data.dates = [{ type:"Birthday", date:iso, recurrence:"yearly" }];
+    else dateUnparsed = true;
+  }
+  return { data, email: email.toLowerCase(), dateUnparsed };
+}
+
+function previewImport(){
+  const existingEmails = new Set(db.members.map(m=>(m.data.email||"").toLowerCase()).filter(Boolean));
+  const seen = new Set();
+  let willImport=0, dupes=0, badDates=0, skipped=0;
+  csvState.rows.forEach(r=>{
+    const built = buildImportRow(r);
+    if(!built){ skipped++; return; }
+    if(built.dateUnparsed) badDates++;
+    if(built.email && (existingEmails.has(built.email) || seen.has(built.email))){
+      if(csvState.skipDupes){ dupes++; return; }
+    }
+    if(built.email) seen.add(built.email);
+    willImport++;
+  });
+  return { willImport, dupes, badDates, skipped };
+}
+
+function updateCsvCount(){
+  const p = previewImport();
+  const bits = [`${p.willImport} contact${p.willImport===1?"":"s"} to import`];
+  if(p.dupes) bits.push(`${p.dupes} duplicate${p.dupes===1?"":"s"} skipped`);
+  if(p.skipped) bits.push(`${p.skipped} blank skipped`);
+  if(p.badDates) bits.push(`${p.badDates} date${p.badDates===1?"":"s"} unreadable`);
+  document.getElementById("csvCount").textContent = bits.join(" · ");
+  document.getElementById("btnDoImport").textContent = `Import ${p.willImport}`;
+  document.getElementById("btnDoImport").disabled = p.willImport===0;
+}
+
+function doImport(){
+  const existingEmails = new Set(db.members.map(m=>(m.data.email||"").toLowerCase()).filter(Boolean));
+  const seen = new Set();
+  const today = isoLocal(new Date());
+  let added=0, dupes=0, badDates=0;
+  csvState.rows.forEach(r=>{
+    const built = buildImportRow(r);
+    if(!built) return;
+    if(built.dateUnparsed) badDates++;
+    if(built.email && (existingEmails.has(built.email) || seen.has(built.email)) && csvState.skipDupes){ dupes++; return; }
+    if(built.email) seen.add(built.email);
+    db.members.push({ id:uid(), createdAt:today, data:built.data });
+    added++;
+  });
+  save(); closeCsv(); renderAll();
+  let msg = `Imported ${added} contact${added===1?"":"s"}`;
+  if(dupes) msg += ` · ${dupes} duplicate${dupes===1?"":"s"} skipped`;
+  if(badDates) msg += ` · ${badDates} date${badDates===1?"":"s"} couldn't be read`;
+  toast(msg);
+}
+
+/* ───────────────────────── Samples ───────────────────────── */
+window.loadSamples = function(){
+  const t = todayMidnight();
+  // birthday on a given year, offset some days from today (local — no TZ rounding)
+  const bday = (yearsAgo, dayOffset)=> isoLocal(new Date(t.getFullYear()-yearsAgo, t.getMonth(), t.getDate()+dayOffset));
+  // a future one-off / monthly anchor, offset days from today
+  const soon = (dayOffset)=> isoLocal(new Date(t.getFullYear(), t.getMonth(), t.getDate()+dayOffset));
+  const ago = (days)=> isoLocal(new Date(t.getFullYear(), t.getMonth(), t.getDate()-days));
+  const samples = [
+    { data:{ name:"Aisha Rahman", email:"aisha@example.com", phone:"+91 98470 11223", labels:["Founder","VIP"], notes:"Met at the Kochi meetup.",
+      dates:[ {type:"Birthday", date:bday(34,0), recurrence:"yearly"}, {type:"Joined", date:"2024-02-11", recurrence:"once"} ] } },
+    { data:{ name:"Daniel Okoro", email:"dan.okoro@example.com", phone:"+234 803 555 0192", labels:["Volunteer"], notes:"",
+      dates:[ {type:"Birthday", date:bday(29,5), recurrence:"yearly"}, {type:"Follow-up", date:soon(9), recurrence:"once"} ] } },
+    { data:{ name:"Mei Lin", email:"mei.lin@example.com", phone:"+65 8123 4567", labels:["Donor","VIP"], notes:"Quarterly check-in.",
+      dates:[ {type:"Birthday", date:bday(41,60), recurrence:"yearly"}, {type:"Renewal", date:soon(12), recurrence:"monthly"} ] } },
+    // older members with nothing imminent → surface in "Reconnect"
+    { createdAt: ago(140), data:{ name:"Carlos Mendes", email:"carlos@example.com", phone:"+55 11 95555 0188", labels:["Member"], notes:"",
+      dates:[ {type:"Birthday", date:bday(26,200), recurrence:"yearly"}, {type:"Joined", date:"2025-01-30", recurrence:"once"} ] } },
+    { createdAt: ago(95), data:{ name:"Priya Nair", email:"priya.nair@example.com", phone:"+91 99000 11222", labels:["Founder"], notes:"Intro'd by Aisha.",
+      dates:[ {type:"Birthday", date:bday(38,120), recurrence:"yearly"}, {type:"Anniversary", date:"2022-11-05", recurrence:"yearly"} ] } },
+  ];
+  samples.forEach(s=>{
+    db.members.push({ id:uid(), createdAt: s.createdAt || isoLocal(new Date()), data:s.data });
+  });
+  save(); renderAll(); toast("Sample members added");
+};
+
+/* ───────────────────────── Render all ───────────────────────── */
+function renderAll(){
+  renderStats();
+  renderBackupNudge();
+  refreshLabelFilter();
+  renderMembers();
+  const active = document.querySelector(".tab.active").dataset.tab;
+  if(active==="outreach") renderOutreach();
+  if(active==="upcoming") renderUpcoming();
+  if(active==="fields") renderFields();
+}
+
+/* ───────────────────────── Wire up ───────────────────────── */
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>switchTab(t.dataset.tab));
+document.getElementById("searchInput").oninput = e=>{ query=e.target.value; renderMembers(); };
+document.getElementById("labelFilter").onchange = e=>{ labelFilterVal=e.target.value; renderMembers(); };
+document.getElementById("horizonFilter").onchange = renderUpcoming;
+document.getElementById("btnNewMember").onclick = ()=>openMember();
+document.getElementById("btnNewField").onclick = ()=>openFieldModal();
+
+document.getElementById("btnTemplates").onclick = openTemplates;
+document.getElementById("btnAddTpl").onclick = addTemplate;
+document.getElementById("btnSaveTpl").onclick = saveTemplates;
+document.getElementById("btnCancelTpl").onclick = closeTemplates;
+document.getElementById("tplModal").onclick = e=>{ if(e.target.id==="tplModal") closeTemplates(); };
+
+document.getElementById("drawerClose").onclick = closeDrawer;
+document.getElementById("btnCancelMember").onclick = closeDrawer;
+document.getElementById("scrim").onclick = closeDrawer;
+document.getElementById("btnSaveMember").onclick = saveMember;
+document.getElementById("btnDeleteMember").onclick = deleteMember;
+
+document.getElementById("btnSaveField").onclick = saveField;
+document.getElementById("btnCancelField").onclick = closeFieldModal;
+document.getElementById("btnDeleteField").onclick = deleteField;
+document.getElementById("fieldModal").onclick = e=>{ if(e.target.id==="fieldModal") closeFieldModal(); };
+
+document.getElementById("btnExport").onclick = exportData;
+document.getElementById("btnImport").onclick = ()=>document.getElementById("fileImport").click();
+document.getElementById("fileImport").onchange = e=>{ if(e.target.files[0]) importData(e.target.files[0]); e.target.value=""; };
+
+document.getElementById("btnBackupNow").onclick = openSb;   // banner CTA → set up cloud sync
+document.getElementById("btnBackupDismiss").onclick = ()=>{ backupDismissed = true; renderBackupNudge(); };
+
+document.getElementById("btnSb").onclick = openSb;
+document.getElementById("btnSbSendCode").onclick = sbSendCode;
+document.getElementById("btnSbVerify").onclick = sbVerifyCode;
+document.getElementById("btnSbClose").onclick = closeSb;
+document.getElementById("btnSbSignout").onclick = sbSignOut;
+document.getElementById("sbModal").onclick = e=>{ if(e.target.id==="sbModal") closeSb(); };
+document.getElementById("sbCode").addEventListener("keydown", e=>{ if(e.key==="Enter") sbVerifyCode(); });
+document.getElementById("sbEmail").addEventListener("keydown", e=>{ if(e.key==="Enter" && !sbOn()) sbSendCode(); });
+
+document.getElementById("btnNeedsAttn").onclick = (e)=>{
+  needsAttentionOnly = !needsAttentionOnly;
+  e.currentTarget.classList.toggle("active", needsAttentionOnly);
+  if(needsAttentionOnly){ sortKey="next"; sortDir=1; }
+  renderMembers();
+};
+document.getElementById("btnPlanWeek").onclick = planWeek;
+document.getElementById("btnWeekClose").onclick = closeWeek;
+document.getElementById("btnWeekRegen").onclick = planWeek;
+document.getElementById("weekModal").onclick = e=>{ if(e.target.id==="weekModal") closeWeek(); };
+
+document.getElementById("btnImportCsv").onclick = openCsv;
+document.getElementById("btnCancelCsv").onclick = closeCsv;
+document.getElementById("btnDoImport").onclick = doImport;
+document.getElementById("csvModal").onclick = e=>{ if(e.target.id==="csvModal") closeCsv(); };
+const csvDrop = document.getElementById("csvDrop"), csvFile = document.getElementById("csvFile");
+csvDrop.onclick = ()=>csvFile.click();
+csvFile.onchange = e=>{ if(e.target.files[0]) handleCsvFile(e.target.files[0]); e.target.value=""; };
+csvDrop.ondragover = e=>{ e.preventDefault(); csvDrop.classList.add("drag"); };
+csvDrop.ondragleave = ()=>csvDrop.classList.remove("drag");
+csvDrop.ondrop = e=>{ e.preventDefault(); csvDrop.classList.remove("drag"); if(e.dataTransfer.files[0]) handleCsvFile(e.dataTransfer.files[0]); };
+
+// Inbox
+document.getElementById("btnInboxScan").onclick = inboxScan;
+document.getElementById("btnInboxClear").onclick = clearInbox;
+document.getElementById("btnInboxAI").onclick = enableAI;
+document.getElementById("btnInboxAIWeb").onclick = enableWebLLM;
+document.getElementById("aiBadge").onclick = ()=>switchTab("inbox");
+document.getElementById("btnInboxImg").onclick = ()=>document.getElementById("inboxFile").click();
+document.getElementById("inboxFile").onchange = e=>{ if(e.target.files[0]) ocrImage(e.target.files[0]); e.target.value=""; };
+const inboxPaste = document.getElementById("inboxPaste");
+document.getElementById("inboxText").addEventListener("paste", e=>{
+  const img = [...(e.clipboardData?.items||[])].find(it=>it.type.startsWith("image/"));
+  if(img){ e.preventDefault(); ocrImage(img.getAsFile()); }
+});
+inboxPaste.ondragover = e=>{ e.preventDefault(); inboxPaste.classList.add("drag"); };
+inboxPaste.ondragleave = ()=>inboxPaste.classList.remove("drag");
+inboxPaste.ondrop = e=>{
+  e.preventDefault(); inboxPaste.classList.remove("drag");
+  const f = e.dataTransfer.files[0];
+  if(f && f.type.startsWith("image/")) ocrImage(f);
+};
+
+document.addEventListener("keydown", e=>{
+  if(e.key==="Escape"){ closeDrawer(); closeFieldModal(); closeTemplates(); closeCsv(); closeWeek(); closeSb(); }
+});
+
+// local-first: works fully offline; flush queued changes to the cloud when back online
+window.addEventListener("online", ()=>{ toast("Back online — syncing…"); flushSync(); });
+window.addEventListener("offline", ()=>{
+  if(sbOn() && JSON.stringify(db) !== lastSbSnapshot) setSbDot("pending");
+});
+
+renderAll();
+sbInit();   // silently reconnect cloud sync if set up on this device
+</script>
+</body>
+</html>
