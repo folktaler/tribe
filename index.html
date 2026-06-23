@@ -325,6 +325,15 @@
 
   /* ── Fields manager ── */
   .fields-list { display: flex; flex-direction: column; gap: 8px; }
+  /* companies */
+  .co-list { display: flex; flex-direction: column; gap: 8px; }
+  .co-card {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 12px 14px; display: flex; align-items: center; gap: 10px; box-shadow: var(--shadow-sm);
+  }
+  .co-card .co-main { flex: 1; min-width: 0; }
+  .co-card .co-name { font-weight: 600; font-size: 0.95rem; }
+  .co-card .co-meta { font-size: 0.78rem; color: var(--grey-2); margin-top: 2px; }
   .field-row {
     background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
     padding: 12px 14px; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow-sm);
@@ -555,6 +564,7 @@
     <button class="tab" data-tab="ask">Ask</button>
     <button class="tab" data-tab="inbox">Inbox</button>
     <button class="tab" data-tab="members">Members <span class="count" id="cMembers"></span></button>
+    <button class="tab" data-tab="companies">Companies <span class="count" id="cCompanies"></span></button>
     <button class="tab" data-tab="upcoming">Upcoming <span class="count" id="cUpcoming"></span></button>
     <button class="tab" data-tab="fields">Fields <span class="count" id="cFields"></span></button>
   </div>
@@ -640,6 +650,15 @@
     </div>
     <div class="fields-list" id="fieldsList"></div>
   </div>
+
+  <!-- ── Companies tab ── -->
+  <div id="tab-companies" class="hide">
+    <div class="toolbar">
+      <div style="font-size:0.84rem;color:var(--grey);flex:1">Organisations your people belong to. Rename or edit once — every linked contact updates.</div>
+      <button class="btn" id="btnNewCompany">+ New company</button>
+    </div>
+    <div class="co-list" id="companiesList"></div>
+  </div>
 </div>
 
 <!-- ── Member drawer ── -->
@@ -691,6 +710,46 @@
       <button class="btn danger sm hide" id="btnDeleteField">Delete field</button>
       <button class="btn ghost" id="btnCancelField">Cancel</button>
       <button class="btn" id="btnSaveField">Save field</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Company modal ── -->
+<div class="modal-scrim" id="companyModal">
+  <div class="modal" style="width:480px">
+    <div class="modal-head">
+      <h2 id="companyModalTitle">Company</h2>
+      <p id="companyModalSub">Linked contacts update automatically when you edit this.</p>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Name</label>
+        <input type="text" id="coName" placeholder="e.g. Acme Inc">
+      </div>
+      <div class="form-group">
+        <label>Website <span class="hint">(optional)</span></label>
+        <input type="url" id="coWebsite" placeholder="https://">
+      </div>
+      <div class="form-group">
+        <label>Address <span class="hint">(optional)</span></label>
+        <textarea id="coAddress" placeholder="Company / mailing address"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Notes <span class="hint">(optional)</span></label>
+        <textarea id="coNotes" placeholder="Anything worth remembering about this org"></textarea>
+      </div>
+      <div class="form-group hide" id="coMergeGroup">
+        <label>Merge into another company <span class="hint">(moves all its people, then removes this one)</span></label>
+        <div style="display:flex;gap:8px">
+          <select id="coMergeTarget" style="flex:1"></select>
+          <button class="btn ghost sm" id="btnMergeCompany" type="button">Merge</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn danger sm hide" id="btnDeleteCompany">Delete</button>
+      <button class="btn ghost" id="btnCancelCompany">Cancel</button>
+      <button class="btn" id="btnSaveCompany">Save</button>
     </div>
   </div>
 </div>
@@ -851,13 +910,14 @@ function defaultData(){
       { id:"name",    label:"Name",    type:"text",  system:true, required:true, showInTable:true, order:0 },
       { id:"email",   label:"Email",   type:"email", system:true, showInTable:true, order:1 },
       { id:"phone",   label:"Phone",   type:"phone", showInTable:false, order:2 },
-      { id:"company", label:"Company", type:"text",  showInTable:true, order:2.3 },
+      { id:"company", label:"Company", type:"company", system:true, showInTable:true, order:2.3 },
       { id:"address", label:"Postal address", type:"textarea", showInTable:false, order:2.6 },
       { id:"labels",  label:"Labels",  type:"tags",  showInTable:true, order:3 },
       { id:"dates",  label:"Dates",  type:"datelist", system:true, options:[...DEFAULT_DATE_TYPES], showInTable:true, order:4 },
       { id:"notes",  label:"Notes",  type:"textarea", showInTable:false, order:5 },
     ],
     members: [],
+    companies: [],
     templates: defaultTemplates(),
     voiceSamples: [],
     lastBackup: null
@@ -882,8 +942,27 @@ function migrate(d){
   if(!Array.isArray(d.templates) || !d.templates.length) d.templates = defaultTemplates();
   if(!Array.isArray(d.voiceSamples)) d.voiceSamples = [];
   // add Company + Postal address to existing setups (for label printing / fuller contacts)
-  if(!d.fields.some(f=>f.id==="company")) d.fields.push({ id:"company", label:"Company", type:"text", showInTable:true, order:2.3 });
+  if(!d.fields.some(f=>f.id==="company")) d.fields.push({ id:"company", label:"Company", type:"company", system:true, showInTable:true, order:2.3 });
   if(!d.fields.some(f=>f.id==="address")) d.fields.push({ id:"address", label:"Postal address", type:"textarea", showInTable:false, order:2.6 });
+  // Company is now a real entity: members link to a company record by id (rename once → updates everyone).
+  if(!Array.isArray(d.companies)) d.companies = [];
+  const cf = d.fields.find(f=>f.id==="company");
+  if(cf && cf.type!=="company"){ cf.type = "company"; cf.system = true; }
+  // fold any legacy free-text company values into company records
+  const byName = {};
+  d.companies.forEach(c=>{ if(c && c.name) byName[c.name.trim().toLowerCase()] = c.id; });
+  d.members.forEach(m=>{
+    const val = m.data.company;
+    if(typeof val === "string" && val && !d.companies.some(c=>c.id===val)){  // a name, not an existing id
+      const key = val.trim().toLowerCase();
+      if(!key){ m.data.company = ""; return; }
+      if(!byName[key]){
+        const c = { id:uid(), name:val.trim(), address:"", website:"", notes:"", createdAt:isoLocal(new Date()) };
+        d.companies.push(c); byName[key] = c.id;
+      }
+      m.data.company = byName[key];
+    }
+  });
   return d;
 }
 
@@ -899,6 +978,19 @@ function save(){ localStorage.setItem(KEY, JSON.stringify(db)); scheduleSupabase
 
 /* ───────────────────────── Helpers ───────────────────────── */
 function fieldById(id){ return db.fields.find(f=>f.id===id); }
+
+/* ── Companies (a real entity members link to by id) ── */
+function companiesArr(){ if(!Array.isArray(db.companies)) db.companies = []; return db.companies; }
+function companyById(id){ return companiesArr().find(c=>c.id===id) || null; }
+function companyName(idOrText){ if(!idOrText) return ""; const c = companyById(idOrText); return c ? c.name : String(idOrText); }
+function companyMemberCount(id){ return db.members.filter(m=>m.data.company===id).length; }
+function findOrCreateCompany(name){
+  name = (name||"").trim(); if(!name) return "";
+  const ex = companiesArr().find(c=>c.name.trim().toLowerCase()===name.toLowerCase());
+  if(ex) return ex.id;
+  const c = { id:uid(), name, address:"", website:"", notes:"", createdAt:isoLocal(new Date()) };
+  companiesArr().push(c); return c.id;
+}
 function sortedFields(){ return [...db.fields].sort((a,b)=>(a.order??99)-(b.order??99)); }
 function memberName(m){ return (m.data.name||"").trim() || "Untitled"; }
 function memberEmail(m){ return (m.data.email||"").trim(); }
@@ -1010,7 +1102,7 @@ function renderStats(){
 }
 
 /* ───────────────────────── Render: members table ───────────────────────── */
-let sortKey = "name", sortDir = 1, query = "", labelFilterVal = "", newThisMonthOnly = false, needsAttentionOnly = false, askMatchIds = null;
+let sortKey = "name", sortDir = 1, query = "", labelFilterVal = "", newThisMonthOnly = false, needsAttentionOnly = false, askMatchIds = null, companyFilterId = null;
 
 function tableColumns(){
   // member column always first, then fields flagged showInTable (excluding name which is the member col)
@@ -1053,6 +1145,7 @@ function signalChip(m){
 }
 
 function memberMatches(m){
+  if(companyFilterId && m.data.company!==companyFilterId) return false;
   if(askMatchIds){ if(!askMatchIds.has(m.id)) return false; }
   if(needsAttentionOnly && !needsAttention(m)) return false;
   if(newThisMonthOnly){
@@ -1093,6 +1186,7 @@ function cellValue(m, f){
     case "boolean": return v ? `<span class="pill accent">Yes</span>` : `<span class="pill">No</span>`;
     case "url": return `<a href="${escapeHTML(v)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--blue)">${escapeHTML(v.replace(/^https?:\/\//,""))}</a>`;
     case "select": return `<span class="pill">${escapeHTML(v)}</span>`;
+    case "company": return `<span class="pill">${escapeHTML(companyName(v))}</span>`;
     case "datelist": {
       const sorted = [...v].filter(e=>e&&e.date);
       const shown = sorted.slice(0,3).map(e=>`<span class="pill">${escapeHTML(e.type||"Date")} · ${escapeHTML(fmtDateShort(e.date))}</span>`).join("");
@@ -1122,11 +1216,12 @@ function renderMembers(){
     </div>`;
     return;
   }
-  const chipText = askMatchIds ? `Showing ${askMatchIds.size} from your question`
+  const chipText = companyFilterId ? `Showing people at ${escapeHTML(companyName(companyFilterId))}`
+    : askMatchIds ? `Showing ${askMatchIds.size} from your question`
     : needsAttentionOnly ? "Showing people who need attention"
     : newThisMonthOnly ? "Showing members added this month" : "";
   const chip = chipText ? `<div class="list-filter">${chipText} <button class="lf-clear" type="button">Clear</button></div>` : "";
-  const clearFilters = ()=>{ newThisMonthOnly=false; needsAttentionOnly=false; askMatchIds=null; const b=document.getElementById("btnNeedsAttn"); if(b) b.classList.remove("active"); renderMembers(); };
+  const clearFilters = ()=>{ newThisMonthOnly=false; needsAttentionOnly=false; askMatchIds=null; companyFilterId=null; const b=document.getElementById("btnNeedsAttn"); if(b) b.classList.remove("active"); renderMembers(); };
 
   if(!rows.length){
     wrap.innerHTML = chip + `<div class="empty"><div class="big">🔍</div><h3>No matches</h3><p>Try a different search or filter.</p></div>`;
@@ -1201,7 +1296,7 @@ function renderLabels(){
   document.getElementById("lpCount").textContent =
     `${rows.length} label${rows.length===1?"":"s"}` + (skipped ? ` · ${skipped} skipped (no address)` : "");
   document.getElementById("lpSheet").innerHTML = rows.map(m=>{
-    const co = (m.data.company||"").trim();
+    const co = companyName(m.data.company).trim();
     const addr = (m.data.address||"").trim();
     return `<div class="lp-cell">
       <div class="lp-name">${escapeHTML(memberName(m))}</div>
@@ -1258,8 +1353,8 @@ function condMatch(m, c){
   switch(c.field){
     case "zodiac":   { const z = memberZodiac(m); return !!z && arr(v).map(x=>String(x).toLowerCase()).includes(z); }
     case "label":    { const labs = (m.data.labels||[]).map(x=>String(x).toLowerCase()); return arr(v).some(x=>labs.includes(String(x).toLowerCase())); }
-    case "company":  return (m.data.company||"").toLowerCase().includes(String(v).toLowerCase());
-    case "location": return ((m.data.address||"")+" "+(m.data.company||"")).toLowerCase().includes(String(v).toLowerCase());
+    case "company":  return companyName(m.data.company).toLowerCase().includes(String(v).toLowerCase());
+    case "location": return ((m.data.address||"")+" "+companyName(m.data.company)).toLowerCase().includes(String(v).toLowerCase());
     case "hasEmail":   return (!!emailOf(m)) === (v!==false);
     case "hasPhone":   return (!!waDigits(m)) === (v!==false);
     case "hasAddress": return (!!(m.data.address||"").trim()) === (v!==false);
@@ -2188,6 +2283,13 @@ function inputForField(f, value){
       return `<input type="text" inputmode="tel" id="${id}" data-field="${f.id}" value="${escapeHTML(v||"")}" placeholder="+1 555 000 0000">`;
     case "datelist":
       return dateListHTML(f, v||[]);
+    case "company": {
+      const dl = "companies_dl";
+      const opts = companiesArr().slice().sort((a,b)=>a.name.localeCompare(b.name))
+        .map(c=>`<option value="${escapeHTML(c.name)}"></option>`).join("");
+      return `<input type="text" id="${id}" data-field="${f.id}" list="${dl}" value="${escapeHTML(companyName(v))}" placeholder="Type to find or add a company" autocomplete="off">
+        <datalist id="${dl}">${opts}</datalist>`;
+    }
     default:
       return `<input type="text" id="${id}" data-field="${f.id}" value="${escapeHTML(v||"")}">`;
   }
@@ -2402,6 +2504,7 @@ function collectDrawerData(){
     if(!f) return;
     if(f.type==="boolean") data[f.id] = el.checked;
     else if(f.type==="number"){ data[f.id] = el.value===""?null:Number(el.value); }
+    else if(f.type==="company") data[f.id] = findOrCreateCompany(el.value);   // name → linked id (creates if new)
     else data[f.id] = el.value.trim();
   });
   document.querySelectorAll("#drawerBody .tags-input").forEach(c=>{
@@ -2520,13 +2623,113 @@ function deleteField(){
 /* ───────────────────────── Tabs ───────────────────────── */
 function switchTab(name){
   document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active", t.dataset.tab===name));
-  ["outreach","ask","inbox","members","upcoming","fields"].forEach(n=>document.getElementById("tab-"+n).classList.toggle("hide", n!==name));
+  ["outreach","ask","inbox","members","companies","upcoming","fields"].forEach(n=>document.getElementById("tab-"+n).classList.toggle("hide", n!==name));
   if(name==="outreach") renderOutreach();
   if(name==="ask") renderAsk();
+  if(name==="companies") renderCompanies();
   if(name==="upcoming") renderUpcoming();
   if(name==="fields") renderFields();
 }
 window.switchTab = switchTab;
+
+/* ───────────────────────── Companies ───────────────────────── */
+function renderCompanies(){
+  const list = document.getElementById("companiesList");
+  if(!list) return;
+  const cos = companiesArr().slice().sort((a,b)=> a.name.localeCompare(b.name));
+  const cc = document.getElementById("cCompanies"); if(cc) cc.textContent = cos.length || "";
+  if(!cos.length){
+    list.innerHTML = `<div class="empty"><div class="big">🏢</div><h3>No companies yet</h3><p>Add a company below, or just type one into a contact's Company field — it'll be created automatically.</p></div>`;
+    return;
+  }
+  list.innerHTML = cos.map(c=>{
+    const n = companyMemberCount(c.id);
+    const web = c.website ? escapeHTML(c.website.replace(/^https?:\/\//,"").replace(/\/$/,"")) : "";
+    const meta = [`${n} ${n===1?"person":"people"}`, web].filter(Boolean).join(" · ");
+    return `<div class="co-card">
+      <div class="co-main">
+        <div class="co-name">${escapeHTML(c.name)}</div>
+        <div class="co-meta">${meta}</div>
+      </div>
+      <button class="btn ghost sm" data-coview="${c.id}" ${n?"":"disabled"}>View people</button>
+      <button class="btn ghost sm" data-coedit="${c.id}">Edit</button>
+    </div>`;
+  }).join("");
+  list.querySelectorAll("[data-coview]").forEach(b=> b.onclick=()=> viewCompanyMembers(b.dataset.coview));
+  list.querySelectorAll("[data-coedit]").forEach(b=> b.onclick=()=> openCompanyModal(b.dataset.coedit));
+}
+
+function viewCompanyMembers(id){
+  companyFilterId = id; askMatchIds = null; needsAttentionOnly = false; newThisMonthOnly = false;
+  switchTab("members"); renderMembers();
+}
+
+let editingCompanyId = null;
+function openCompanyModal(id){
+  editingCompanyId = id || null;
+  const c = id ? companyById(id) : null;
+  document.getElementById("companyModalTitle").textContent = c ? "Edit company" : "New company";
+  document.getElementById("coName").value    = c ? c.name : "";
+  document.getElementById("coWebsite").value = c ? (c.website||"") : "";
+  document.getElementById("coAddress").value = c ? (c.address||"") : "";
+  document.getElementById("coNotes").value   = c ? (c.notes||"") : "";
+  document.getElementById("btnDeleteCompany").classList.toggle("hide", !c);
+  // merge target list (every other company)
+  const mergeGroup = document.getElementById("coMergeGroup");
+  const others = companiesArr().filter(x=>x.id!==id).sort((a,b)=>a.name.localeCompare(b.name));
+  if(c && others.length){
+    document.getElementById("coMergeTarget").innerHTML = others.map(x=>`<option value="${x.id}">${escapeHTML(x.name)}</option>`).join("");
+    mergeGroup.classList.remove("hide");
+  } else mergeGroup.classList.add("hide");
+  const sub = document.getElementById("companyModalSub");
+  if(c){ const n = companyMemberCount(c.id); sub.textContent = n ? `${n} ${n===1?"person is":"people are"} linked — editing updates them all.` : "No one is linked to this company yet."; }
+  else sub.textContent = "Linked contacts update automatically when you edit this.";
+  document.getElementById("companyModal").classList.add("open");
+  setTimeout(()=>document.getElementById("coName").focus(), 50);
+}
+function closeCompanyModal(){ document.getElementById("companyModal").classList.remove("open"); editingCompanyId = null; }
+
+function saveCompany(){
+  const name = document.getElementById("coName").value.trim();
+  if(!name){ toast("Give the company a name"); return; }
+  const website = document.getElementById("coWebsite").value.trim();
+  const address = document.getElementById("coAddress").value.trim();
+  const notes   = document.getElementById("coNotes").value.trim();
+  if(editingCompanyId){
+    const c = companyById(editingCompanyId); if(!c) return;
+    // warn if renaming onto an existing different company
+    const clash = companiesArr().find(x=>x.id!==c.id && x.name.trim().toLowerCase()===name.toLowerCase());
+    if(clash){ toast(`"${name}" already exists — use Merge to combine them`); return; }
+    c.name = name; c.website = website; c.address = address; c.notes = notes;
+  } else {
+    const ex = companiesArr().find(x=>x.name.trim().toLowerCase()===name.toLowerCase());
+    if(ex){ toast("That company already exists"); return; }
+    companiesArr().push({ id:uid(), name, website, address, notes, createdAt:isoLocal(new Date()) });
+  }
+  save(); closeCompanyModal(); renderCompanies(); renderMembers();
+  toast("Company saved");
+}
+function deleteCompany(){
+  const c = companyById(editingCompanyId); if(!c) return;
+  const n = companyMemberCount(c.id);
+  if(!confirm(`Delete "${c.name}"?` + (n ? ` ${n} ${n===1?"contact":"contacts"} will have their company cleared (the contacts stay).` : ""))) return;
+  db.members.forEach(m=>{ if(m.data.company===c.id) m.data.company = ""; });
+  db.companies = companiesArr().filter(x=>x.id!==c.id);
+  if(companyFilterId===c.id) companyFilterId = null;
+  save(); closeCompanyModal(); renderCompanies(); renderMembers();
+  toast("Company deleted");
+}
+function mergeCompany(){
+  const from = companyById(editingCompanyId); if(!from) return;
+  const intoId = document.getElementById("coMergeTarget").value;
+  const into = companyById(intoId); if(!into) return;
+  if(!confirm(`Move everyone from "${from.name}" into "${into.name}" and remove "${from.name}"?`)) return;
+  db.members.forEach(m=>{ if(m.data.company===from.id) m.data.company = into.id; });
+  db.companies = companiesArr().filter(x=>x.id!==from.id);
+  if(companyFilterId===from.id) companyFilterId = into.id;
+  save(); closeCompanyModal(); renderCompanies(); renderMembers();
+  toast(`Merged into ${into.name}`);
+}
 
 /* ───────────────────────── Backup (JSON) + nudge ───────────────────────── */
 let backupDismissed = false;
@@ -2955,6 +3158,7 @@ function doImport(){
     if(built.dateUnparsed) badDates++;
     if(built.email && (existingEmails.has(built.email) || seen.has(built.email)) && csvState.skipDupes){ dupes++; return; }
     if(built.email) seen.add(built.email);
+    if(built.data.company) built.data.company = findOrCreateCompany(built.data.company);   // name → linked company
     db.members.push({ id:uid(), createdAt:today, data:built.data });
     added++;
   });
@@ -2974,19 +3178,20 @@ window.loadSamples = function(){
   const soon = (dayOffset)=> isoLocal(new Date(t.getFullYear(), t.getMonth(), t.getDate()+dayOffset));
   const ago = (days)=> isoLocal(new Date(t.getFullYear(), t.getMonth(), t.getDate()-days));
   const samples = [
-    { data:{ name:"Aisha Rahman", email:"aisha@example.com", phone:"+91 98470 11223", labels:["Founder","VIP"], notes:"Met at the Kochi meetup.",
+    { co:"Aikyam", data:{ name:"Aisha Rahman", email:"aisha@example.com", phone:"+91 98470 11223", labels:["Founder","VIP"], notes:"Met at the Kochi meetup.",
       dates:[ {type:"Birthday", date:bday(34,0), recurrence:"yearly"}, {type:"Joined", date:"2024-02-11", recurrence:"once"} ] } },
-    { data:{ name:"Daniel Okoro", email:"dan.okoro@example.com", phone:"+234 803 555 0192", labels:["Volunteer"], notes:"",
+    { co:"Greenfield NGO", data:{ name:"Daniel Okoro", email:"dan.okoro@example.com", phone:"+234 803 555 0192", labels:["Volunteer"], notes:"",
       dates:[ {type:"Birthday", date:bday(29,5), recurrence:"yearly"}, {type:"Follow-up", date:soon(9), recurrence:"once"} ] } },
-    { data:{ name:"Mei Lin", email:"mei.lin@example.com", phone:"+65 8123 4567", labels:["Donor","VIP"], notes:"Quarterly check-in.",
+    { co:"Aikyam", data:{ name:"Mei Lin", email:"mei.lin@example.com", phone:"+65 8123 4567", labels:["Donor","VIP"], notes:"Quarterly check-in.",
       dates:[ {type:"Birthday", date:bday(41,60), recurrence:"yearly"}, {type:"Renewal", date:soon(12), recurrence:"monthly"} ] } },
     // older members with nothing imminent → surface in "Reconnect"
-    { createdAt: ago(140), data:{ name:"Carlos Mendes", email:"carlos@example.com", phone:"+55 11 95555 0188", labels:["Member"], notes:"",
+    { co:"Greenfield NGO", createdAt: ago(140), data:{ name:"Carlos Mendes", email:"carlos@example.com", phone:"+55 11 95555 0188", labels:["Member"], notes:"",
       dates:[ {type:"Birthday", date:bday(26,200), recurrence:"yearly"}, {type:"Joined", date:"2025-01-30", recurrence:"once"} ] } },
-    { createdAt: ago(95), data:{ name:"Priya Nair", email:"priya.nair@example.com", phone:"+91 99000 11222", labels:["Founder"], notes:"Intro'd by Aisha.",
+    { co:"Aikyam", createdAt: ago(95), data:{ name:"Priya Nair", email:"priya.nair@example.com", phone:"+91 99000 11222", labels:["Founder"], notes:"Intro'd by Aisha.",
       dates:[ {type:"Birthday", date:bday(38,120), recurrence:"yearly"}, {type:"Anniversary", date:"2022-11-05", recurrence:"yearly"} ] } },
   ];
   samples.forEach(s=>{
+    if(s.co) s.data.company = findOrCreateCompany(s.co);
     db.members.push({ id:uid(), createdAt: s.createdAt || isoLocal(new Date()), data:s.data });
   });
   save(); renderAll(); toast("Sample members added");
@@ -2998,10 +3203,12 @@ function renderAll(){
   renderBackupNudge();
   refreshLabelFilter();
   renderMembers();
+  const cc = document.getElementById("cCompanies"); if(cc) cc.textContent = companiesArr().length || "";
   const active = document.querySelector(".tab.active").dataset.tab;
   if(active==="outreach") renderOutreach();
   if(active==="upcoming") renderUpcoming();
   if(active==="fields") renderFields();
+  if(active==="companies") renderCompanies();
 }
 
 /* ───────────────────────── Wire up ───────────────────────── */
@@ -3028,6 +3235,13 @@ document.getElementById("btnSaveField").onclick = saveField;
 document.getElementById("btnCancelField").onclick = closeFieldModal;
 document.getElementById("btnDeleteField").onclick = deleteField;
 document.getElementById("fieldModal").onclick = e=>{ if(e.target.id==="fieldModal") closeFieldModal(); };
+
+document.getElementById("btnNewCompany").onclick = ()=>openCompanyModal();
+document.getElementById("btnSaveCompany").onclick = saveCompany;
+document.getElementById("btnCancelCompany").onclick = closeCompanyModal;
+document.getElementById("btnDeleteCompany").onclick = deleteCompany;
+document.getElementById("btnMergeCompany").onclick = mergeCompany;
+document.getElementById("companyModal").onclick = e=>{ if(e.target.id==="companyModal") closeCompanyModal(); };
 
 document.getElementById("btnExport").onclick = exportData;
 document.getElementById("btnImport").onclick = ()=>document.getElementById("fileImport").click();
