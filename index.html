@@ -2718,9 +2718,13 @@ function openSb(){
     setSbStatus(sbConfigured() ? "Sync your data to the cloud and across your devices — no password, we email you a code." : "Cloud sync isn't configured in this build yet.");
     if(body) body.style.display = "";
   }
-  document.getElementById("btnSbSignout").classList.toggle("hide", !sbOn());
+  const signedIn = sbOn();
+  document.getElementById("btnSbSignout").classList.toggle("hide", !signedIn);
+  document.getElementById("btnSbSendCode").classList.toggle("hide", signedIn);   // no "Email me a code" once signed in
+  document.getElementById("btnSbVerify").classList.add("hide");                  // only appears after a code is sent
+  document.getElementById("sbCodeRow").classList.add("hide");                    // reset the code field
   document.getElementById("sbModal").classList.add("open");
-  setTimeout(()=>{ const el=document.getElementById("sbEmail"); if(el && !sbOn()) el.focus(); }, 50);
+  setTimeout(()=>{ const el=document.getElementById("sbEmail"); if(el && !signedIn) el.focus(); }, 50);
 }
 function closeSb(){ document.getElementById("sbModal").classList.remove("open"); }
 async function sbSignOut(){
