@@ -334,6 +334,17 @@
   .co-card .co-main { flex: 1; min-width: 0; }
   .co-card .co-name { font-weight: 600; font-size: 0.95rem; }
   .co-card .co-meta { font-size: 0.78rem; color: var(--grey-2); margin-top: 2px; }
+  /* duplicates / merge */
+  .dup-empty { color: var(--grey); font-size: 0.9rem; line-height: 1.6; padding: 12px 2px; }
+  .dup-cluster { border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin-bottom: 12px; }
+  .dup-clabel { font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--grey-2); margin-bottom: 8px; }
+  .dup-row { display: flex; align-items: flex-start; gap: 9px; padding: 7px 8px; border-radius: 8px; cursor: pointer; }
+  .dup-row:hover { background: #f6f8fa; }
+  .dup-row input { margin-top: 3px; }
+  .dup-info { min-width: 0; }
+  .dup-name { font-weight: 600; font-size: 0.9rem; }
+  .dup-meta { font-size: 0.78rem; color: var(--grey-2); margin-top: 1px; word-break: break-word; }
+  .dup-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
   .field-row {
     background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
     padding: 12px 14px; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow-sm);
@@ -398,6 +409,20 @@
   .tags-input .tag { display: inline-flex; align-items: center; gap: 5px; background: #eef2f6; color: var(--ink-2); padding: 2px 4px 2px 9px; border-radius: 20px; font-size: 0.76rem; }
   .tags-input .tag button { border: none; background: none; color: var(--grey); font-size: 0.9rem; line-height: 1; padding: 0 2px; }
   .tags-input input { border: none; outline: none; flex: 1; min-width: 80px; padding: 3px; }
+
+  /* multi-value email / phone */
+  .ml { display: flex; flex-direction: column; gap: 7px; }
+  .ml-row { display: flex; align-items: center; gap: 6px; }
+  .ml-row .ml-in { flex: 1; min-width: 0; }
+  .ml-row .ml-wa-lbl { display: inline-flex; align-items: center; gap: 4px; font-size: 0.76rem; color: var(--grey); white-space: nowrap; cursor: pointer; }
+  .ml-row .ml-wa-lbl input { width: auto; margin: 0; }
+  .ml-row .ml-primary { display: none; font-size: 0.68rem; font-weight: 600; color: var(--accent, #16a34a); background: #e7f9ea; padding: 2px 7px; border-radius: 20px; white-space: nowrap; }
+  .ml-row.is-primary .ml-primary { display: inline-block; }
+  .ml-row.is-primary .ml-star { display: none; }
+  .ml-row .ml-star, .ml-row .ml-rm { border: none; background: none; cursor: pointer; color: var(--grey); font-size: 0.95rem; line-height: 1; padding: 2px 4px; border-radius: 6px; }
+  .ml-row .ml-star:hover, .ml-row .ml-rm:hover { background: #eef2f6; color: var(--ink-2); }
+  .ml-add { align-self: flex-start; border: 1px dashed var(--line); background: none; color: var(--grey); font-size: 0.8rem; padding: 5px 10px; border-radius: 7px; cursor: pointer; }
+  .ml-add:hover { border-color: var(--grey-2); color: var(--ink-2); }
 
   /* date list (repeatable dates) */
   .datelist .dl-rows { display: flex; flex-direction: column; gap: 7px; margin-bottom: 8px; }
@@ -621,6 +646,7 @@
       </div>
       <select class="filter" id="labelFilter"><option value="">All labels</option></select>
       <button class="btn ghost" id="btnNeedsAttn" title="Show only people with something due or gone quiet">⚡ Needs attention</button>
+      <button class="btn ghost" id="btnDupes" title="Find and merge duplicate contacts">⧉ Merge duplicates</button>
       <button class="btn ghost" id="btnLabels" title="Print address labels for the people shown below">🖨 Labels</button>
       <button class="btn ghost" id="btnImportCsv">↧ Import CSV</button>
       <button class="btn" id="btnNewMember">+ New member</button>
@@ -750,6 +776,20 @@
       <button class="btn danger sm hide" id="btnDeleteCompany">Delete</button>
       <button class="btn ghost" id="btnCancelCompany">Cancel</button>
       <button class="btn" id="btnSaveCompany">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Duplicates / merge modal ── -->
+<div class="modal-scrim" id="dupModal">
+  <div class="modal" style="width:600px">
+    <div class="modal-head">
+      <h2>Merge duplicates</h2>
+      <p>Same person under more than one email, phone, or name. Pick who to keep — everything else folds in, nothing is lost.</p>
+    </div>
+    <div class="modal-body" id="dupBody"></div>
+    <div class="modal-foot">
+      <button class="btn ghost" id="btnCloseDupes">Done</button>
     </div>
   </div>
 </div>
@@ -913,8 +953,8 @@ function defaultData(){
   return {
     fields: [
       { id:"name",    label:"Name",    type:"text",  system:true, required:true, showInTable:true, order:0 },
-      { id:"email",   label:"Email",   type:"email", system:true, showInTable:true, order:1 },
-      { id:"phone",   label:"Phone",   type:"phone", showInTable:false, order:2 },
+      { id:"email",   label:"Email",   type:"emails", system:true, showInTable:true, order:1 },
+      { id:"phone",   label:"Phone",   type:"phones", showInTable:false, order:2 },
       { id:"company", label:"Company", type:"company", system:true, showInTable:true, order:2.3 },
       { id:"address", label:"Postal address", type:"textarea", showInTable:false, order:2.6 },
       { id:"labels",  label:"Labels",  type:"tags",  showInTable:true, order:3 },
@@ -925,6 +965,7 @@ function defaultData(){
     companies: [],
     templates: defaultTemplates(),
     voiceSamples: [],
+    dismissedDupes: [],
     lastBackup: null
   };
 }
@@ -946,6 +987,7 @@ function migrate(d){
   }
   if(!Array.isArray(d.templates) || !d.templates.length) d.templates = defaultTemplates();
   if(!Array.isArray(d.voiceSamples)) d.voiceSamples = [];
+  if(!Array.isArray(d.dismissedDupes)) d.dismissedDupes = [];
   // add Company + Postal address to existing setups (for label printing / fuller contacts)
   if(!d.fields.some(f=>f.id==="company")) d.fields.push({ id:"company", label:"Company", type:"company", system:true, showInTable:true, order:2.3 });
   if(!d.fields.some(f=>f.id==="address")) d.fields.push({ id:"address", label:"Postal address", type:"textarea", showInTable:false, order:2.6 });
@@ -966,6 +1008,19 @@ function migrate(d){
         d.companies.push(c); byName[key] = c.id;
       }
       m.data.company = byName[key];
+    }
+  });
+  // Email & phone are now multi-value (a person can hold several; one phone flagged WhatsApp).
+  const ef = d.fields.find(f=>f.id==="email"); if(ef && ef.type!=="emails") ef.type = "emails";
+  const pf = d.fields.find(f=>f.id==="phone"); if(pf && pf.type!=="phones") pf.type = "phones";
+  d.members.forEach(m=>{
+    if(!Array.isArray(m.data.email)){
+      const e = (m.data.email||"").trim();
+      m.data.email = e ? [e] : [];
+    }
+    if(!Array.isArray(m.data.phone)){
+      const p = (m.data.phone||"").trim();
+      m.data.phone = p ? [{ num:p, wa:true }] : [];   // legacy single phone → assume it's the WhatsApp one
     }
   });
   return d;
@@ -998,7 +1053,21 @@ function findOrCreateCompany(name){
 }
 function sortedFields(){ return [...db.fields].sort((a,b)=>(a.order??99)-(b.order??99)); }
 function memberName(m){ return (m.data.name||"").trim() || "Untitled"; }
-function memberEmail(m){ return (m.data.email||"").trim(); }
+/* ── Multi-value email & phone (a contact can hold several; first = primary) ── */
+function emailsOf(m){
+  const e = m.data.email;
+  if(Array.isArray(e)) return e.map(x=>(x||"").trim()).filter(Boolean);
+  const s = (e||"").trim(); return s ? [s] : [];   // legacy fallback (pre-migration string)
+}
+function primaryEmail(m){ return emailsOf(m)[0] || ""; }
+function phonesOf(m){
+  const p = m.data.phone;
+  if(Array.isArray(p)) return p.filter(x=>x && (x.num||"").trim()).map(x=>({ num:x.num.trim(), wa:!!x.wa }));
+  const s = (p||"").trim(); return s ? [{ num:s, wa:true }] : [];   // legacy fallback (pre-migration string)
+}
+function primaryPhone(m){ const p = phonesOf(m); return p[0] ? p[0].num : ""; }
+function whatsappPhone(m){ const p = phonesOf(m); const w = p.find(x=>x.wa) || p[0]; return w ? w.num : ""; }
+function memberEmail(m){ return primaryEmail(m); }
 
 function initials(name){
   const parts = (name||"").trim().split(/\s+/).filter(Boolean);
@@ -1192,6 +1261,15 @@ function cellValue(m, f){
     case "url": return `<a href="${escapeHTML(v)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--blue)">${escapeHTML(v.replace(/^https?:\/\//,""))}</a>`;
     case "select": return `<span class="pill">${escapeHTML(v)}</span>`;
     case "company": return `<span class="pill">${escapeHTML(companyName(v))}</span>`;
+    case "emails": {
+      const list = emailsOf(m); if(!list.length) return `<span style="color:var(--grey-2)">—</span>`;
+      return escapeHTML(list[0]) + (list.length>1 ? ` <span class="pill">+${list.length-1}</span>` : "");
+    }
+    case "phones": {
+      const list = phonesOf(m); if(!list.length) return `<span style="color:var(--grey-2)">—</span>`;
+      const wa = list[0].wa ? ` <span class="pill accent">WA</span>` : "";
+      return escapeHTML(list[0].num) + wa + (list.length>1 ? ` <span class="pill">+${list.length-1}</span>` : "");
+    }
     case "datelist": {
       const sorted = [...v].filter(e=>e&&e.date);
       const shown = sorted.slice(0,3).map(e=>`<span class="pill">${escapeHTML(e.type||"Date")} · ${escapeHTML(fmtDateShort(e.date))}</span>`).join("");
@@ -1568,8 +1646,8 @@ const GENERIC_TPL = { subject:"Hi {first}!", body:"Hi {first}, thinking of you �
 const GENERIC_COLD = { subject:"It's been a while, {first}", body:"Hey {first}, it's been too long — how have you been? Would love to catch up." };
 
 function firstName(m){ return (memberName(m).split(/\s+/)[0]) || "there"; }
-function emailOf(m){ return (m.data.email||"").trim(); }
-function waDigits(m){ return (m.data.phone||"").replace(/[^0-9]/g,""); }
+function emailOf(m){ return primaryEmail(m); }
+function waDigits(m){ return whatsappPhone(m).replace(/[^0-9]/g,""); }
 function fillTpl(str, m, type){
   return (str||"").replace(/\{first\}/g, firstName(m)).replace(/\{name\}/g, memberName(m)).replace(/\{type\}/g, (type||"message").toLowerCase());
 }
@@ -1883,7 +1961,7 @@ function inboxExtract(text){
   const matched = new Map(); // id -> {member, reasons:Set}
   const add = (m, reason)=>{ if(!matched.has(m.id)) matched.set(m.id, {member:m, reasons:new Set()}); matched.get(m.id).reasons.add(reason); };
 
-  emails.forEach(em=>{ const m = db.members.find(x=>(x.data.email||"").toLowerCase()===em); if(m) add(m, "email"); });
+  emails.forEach(em=>{ const m = db.members.find(x=>emailsOf(x).some(e=>e.toLowerCase()===em)); if(m) add(m, "email"); });
 
   // first-name frequency, to only trust unique first names
   const firstCount = {};
@@ -1895,7 +1973,7 @@ function inboxExtract(text){
     if(first.length>=3 && firstCount[first.toLowerCase()]===1 && new RegExp(`\\b${escapeRegex(first)}\\b`, "i").test(text)) add(m, "name");
   });
 
-  const knownEmails = new Set(db.members.map(m=>(m.data.email||"").toLowerCase()));
+  const knownEmails = new Set(db.members.flatMap(m=>emailsOf(m).map(e=>e.toLowerCase())));
   const newEmails = emails.filter(e=>!knownEmails.has(e));
   return { matched: [...matched.values()], newEmails };
 }
@@ -2292,10 +2370,14 @@ function inputForField(f, value){
       return `<input type="number" id="${id}" data-field="${f.id}" value="${escapeHTML(v==null?"":v)}">`;
     case "email":
       return `<input type="email" id="${id}" data-field="${f.id}" value="${escapeHTML(v||"")}" placeholder="name@example.com">`;
+    case "emails":
+      return emailsHTML(Array.isArray(v)?v:(v?[v]:[]));
     case "url":
       return `<input type="url" id="${id}" data-field="${f.id}" value="${escapeHTML(v||"")}" placeholder="https://">`;
     case "phone":
       return `<input type="text" inputmode="tel" id="${id}" data-field="${f.id}" value="${escapeHTML(v||"")}" placeholder="+1 555 000 0000">`;
+    case "phones":
+      return phonesHTML(Array.isArray(v)?v:(v?[{num:String(v),wa:true}]:[]));
     case "datelist":
       return dateListHTML(f, v||[]);
     case "company": {
@@ -2315,6 +2397,51 @@ function tagsInputHTML(fid, tags){
     ${tags.map(t=>`<span class="tag">${escapeHTML(t)}<button type="button" data-rm="${escapeHTML(t)}">✕</button></span>`).join("")}
     <input type="text" placeholder="Add label…">
   </div>`;
+}
+
+/* ── Multi-value email / phone editors (first row = primary) ── */
+function emailRowHTML(val){
+  return `<div class="ml-row">
+    <input type="email" class="ml-in" value="${escapeHTML(val||"")}" placeholder="name@example.com">
+    <span class="ml-primary" title="Primary — used for Gmail compose">primary</span>
+    <button type="button" class="ml-star" title="Make primary">★</button>
+    <button type="button" class="ml-rm" title="Remove">✕</button>
+  </div>`;
+}
+function emailsHTML(list){
+  const rows = (list.length?list:[""]).map(emailRowHTML).join("");
+  return `<div class="ml" data-ml="emails">${rows}<button type="button" class="ml-add">+ Add email</button></div>`;
+}
+function phoneRowHTML(p){
+  p = p || {}; const num = typeof p==="string" ? p : (p.num||""); const wa = typeof p==="object" && p.wa;
+  return `<div class="ml-row">
+    <input type="text" inputmode="tel" class="ml-in" value="${escapeHTML(num)}" placeholder="+1 555 000 0000">
+    <label class="ml-wa-lbl" title="This is their WhatsApp number"><input type="checkbox" class="ml-wa" ${wa?"checked":""}> WhatsApp</label>
+    <span class="ml-primary" title="Primary phone">primary</span>
+    <button type="button" class="ml-star" title="Make primary">★</button>
+    <button type="button" class="ml-rm" title="Remove">✕</button>
+  </div>`;
+}
+function phonesHTML(list){
+  const rows = (list.length?list:[{}]).map(phoneRowHTML).join("");
+  return `<div class="ml" data-ml="phones">${rows}<button type="button" class="ml-add">+ Add phone</button></div>`;
+}
+function wireMultiList(ml){
+  const kind = ml.dataset.ml;   // "emails" | "phones"
+  const refresh = ()=>{
+    // first row gets the "primary" chip; if only one row, no need for star on it
+    const rows = [...ml.querySelectorAll(".ml-row")];
+    rows.forEach((r,i)=> r.classList.toggle("is-primary", i===0));
+  };
+  ml.addEventListener("click", e=>{
+    const addBtn = e.target.closest(".ml-add");
+    if(addBtn){ const r = document.createElement("div"); r.innerHTML = (kind==="emails"?emailRowHTML(""):phoneRowHTML({})); ml.insertBefore(r.firstElementChild, addBtn); refresh(); return; }
+    const rm = e.target.closest(".ml-rm");
+    if(rm){ const row = rm.closest(".ml-row"); if(ml.querySelectorAll(".ml-row").length>1) row.remove(); else row.querySelectorAll("input").forEach(i=>{ i.value=""; if(i.type==="checkbox") i.checked=false; }); refresh(); return; }
+    const star = e.target.closest(".ml-star");
+    if(star){ const row = star.closest(".ml-row"); ml.insertBefore(row, ml.firstElementChild); refresh(); return; }
+  });
+  refresh();
 }
 
 const MONTHS_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -2399,9 +2526,10 @@ window.openMember = function(id){
     });
   }
 
-  // wire tags inputs + date lists + boolean toggles + live name avatar
+  // wire tags inputs + date lists + multi-value email/phone + boolean toggles + live name avatar
   body.querySelectorAll(".tags-input").forEach(wireTagsInput);
   body.querySelectorAll(".datelist").forEach(wireDateList);
+  body.querySelectorAll(".ml").forEach(wireMultiList);
   body.querySelectorAll('input[type=checkbox][data-field]').forEach(cb=>{
     cb.onchange = ()=>{ const lbl=cb.parentElement.querySelector(".tlabel"); if(lbl) lbl.textContent = cb.checked?"Yes":"No"; };
   });
@@ -2540,6 +2668,13 @@ function collectDrawerData(){
     });
     data[c.dataset.datelist] = arr;
   });
+  // multi-value email / phone (stored under the field ids "email" / "phone")
+  const emC = document.querySelector('#drawerBody .ml[data-ml="emails"]');
+  if(emC) data.email = [...emC.querySelectorAll(".ml-in")].map(i=>i.value.trim()).filter(Boolean);
+  const phC = document.querySelector('#drawerBody .ml[data-ml="phones"]');
+  if(phC) data.phone = [...phC.querySelectorAll(".ml-row")]
+    .map(r=>({ num:r.querySelector(".ml-in").value.trim(), wa:!!r.querySelector(".ml-wa")?.checked }))
+    .filter(p=>p.num);
   return data;
 }
 
@@ -2744,6 +2879,137 @@ function mergeCompany(){
   if(companyFilterId===from.id) companyFilterId = into.id;
   save(); closeCompanyModal(); renderCompanies(); renderMembers();
   toast(`Merged into ${into.name}`);
+}
+
+/* ───────────────────────── Merge contacts / find duplicates ───────────────────────── */
+function phoneDigits(n){ return (n||"").replace(/[^0-9]/g,""); }
+
+// Fold otherIds into keeperId: union emails/phones/labels/dates, fill blanks, concat notes & logs.
+function mergeMembers(keeperId, otherIds){
+  const keeper = db.members.find(m=>m.id===keeperId); if(!keeper) return;
+  const others = otherIds.map(id=>db.members.find(m=>m.id===id)).filter(Boolean);
+  if(!others.length) return;
+
+  // emails — union, case-insensitive, keeper's order first
+  const emails = [...emailsOf(keeper)]; const seenE = new Set(emails.map(e=>e.toLowerCase()));
+  others.forEach(o=> emailsOf(o).forEach(e=>{ if(!seenE.has(e.toLowerCase())){ emails.push(e); seenE.add(e.toLowerCase()); } }));
+  keeper.data.email = emails;
+
+  // phones — union by digits, OR the WhatsApp flag
+  const phones = [...phonesOf(keeper)]; const byDig = new Map(phones.map(p=>[phoneDigits(p.num), p]));
+  others.forEach(o=> phonesOf(o).forEach(p=>{ const k=phoneDigits(p.num); if(byDig.has(k)){ if(p.wa) byDig.get(k).wa = true; } else { phones.push(p); byDig.set(k,p); } }));
+  keeper.data.phone = phones;
+
+  // labels — union
+  const labels = [...(keeper.data.labels||[])];
+  others.forEach(o=> (o.data.labels||[]).forEach(l=>{ if(!labels.includes(l)) labels.push(l); }));
+  if(labels.length) keeper.data.labels = labels;
+
+  // dates — union by type+date
+  const dates = [...(keeper.data.dates||[])]; const seenD = new Set(dates.map(d=>`${d.type}|${d.date}`));
+  others.forEach(o=> (o.data.dates||[]).forEach(d=>{ const k=`${d.type}|${d.date}`; if(!seenD.has(k)){ dates.push(d); seenD.add(k); } }));
+  if(dates.length) keeper.data.dates = dates;
+
+  // company / address — keep keeper's if set, else take first other that has one
+  if(!keeper.data.company){ const o=others.find(x=>x.data.company); if(o) keeper.data.company = o.data.company; }
+  if(!(keeper.data.address||"").trim()){ const o=others.find(x=>(x.data.address||"").trim()); if(o) keeper.data.address = o.data.address; }
+
+  // notes — concatenate (keeper first), separated, nothing lost
+  const notes = [keeper.data.notes, ...others.map(o=>o.data.notes)].map(n=>(n||"").trim()).filter(Boolean);
+  if(notes.length) keeper.data.notes = [...new Set(notes)].join("\n\n———\n\n");
+
+  // any other custom field — fill keeper's blanks from others
+  db.fields.forEach(f=>{
+    if(["name","email","phone","labels","dates","notes","company","address"].includes(f.id)) return;
+    const cur = keeper.data[f.id];
+    if(cur==null || cur==="" || (Array.isArray(cur)&&!cur.length)){
+      const o = others.find(x=>{ const v=x.data[f.id]; return v!=null && v!=="" && !(Array.isArray(v)&&!v.length); });
+      if(o) keeper.data[f.id] = o.data[f.id];
+    }
+  });
+
+  // interaction history — merge logs + snooze state, keep earliest "known since"
+  ensureMemberMeta(keeper);
+  others.forEach(o=>{ ensureMemberMeta(o); keeper.log.push(...o.log); Object.assign(keeper.snoozed,o.snoozed); Object.assign(keeper.snoozedUntil,o.snoozedUntil); });
+  keeper.log.sort((a,b)=> (a.date||"")<(b.date||"")?-1:1);
+  const created = [keeper.createdAt, ...others.map(o=>o.createdAt)].filter(Boolean).sort();
+  if(created.length) keeper.createdAt = created[0];
+
+  // drop the merged-away records
+  const drop = new Set(otherIds);
+  db.members = db.members.filter(m=>!drop.has(m.id));
+  save();
+}
+
+// Cluster members that share an email, a phone (≥7 digits), or an identical name. Union-find.
+function findDuplicateClusters(){
+  const parent = {};
+  const find = x => parent[x]===x ? x : (parent[x]=find(parent[x]));
+  const union = (a,b)=>{ parent[find(a)] = find(b); };
+  db.members.forEach(m=> parent[m.id]=m.id);
+  const keyOwner = {};
+  const addKey = (m,key)=>{ if(!key) return; if(keyOwner[key]) union(m.id, keyOwner[key]); else keyOwner[key]=m.id; };
+  db.members.forEach(m=>{
+    emailsOf(m).forEach(e=> addKey(m, "e:"+e.toLowerCase()));
+    phonesOf(m).forEach(p=>{ const d=phoneDigits(p.num); if(d.length>=7) addKey(m, "p:"+d); });
+    const nm = memberName(m).toLowerCase().replace(/\s+/g," ").trim();
+    if(nm && nm!=="untitled") addKey(m, "n:"+nm);
+  });
+  const groups = {};
+  db.members.forEach(m=>{ const r=find(m.id); (groups[r]=groups[r]||[]).push(m); });
+  const dismissed = new Set(Array.isArray(db.dismissedDupes)?db.dismissedDupes:[]);
+  return Object.values(groups).filter(g=>g.length>1)
+    .filter(g=> !dismissed.has(clusterSig(g)))
+    .sort((a,b)=> b.length-a.length);
+}
+function clusterSig(group){ return group.map(m=>m.id).sort().join("|"); }
+
+function openDuplicates(){ renderDuplicates(); document.getElementById("dupModal").classList.add("open"); }
+function closeDuplicates(){ document.getElementById("dupModal").classList.remove("open"); }
+
+function renderDuplicates(){
+  const body = document.getElementById("dupBody");
+  const clusters = findDuplicateClusters();
+  if(!clusters.length){
+    body.innerHTML = `<div class="dup-empty">✅ No likely duplicates found. Anyone sharing an email, phone or exact name would show up here.</div>`;
+    return;
+  }
+  body.innerHTML = clusters.map((g,gi)=>{
+    const rows = g.map((m,mi)=>{
+      const emails = emailsOf(m).join(", ") || "—";
+      const phones = phonesOf(m).map(p=>p.num).join(", ") || "—";
+      const co = companyName(m.data.company);
+      const meta = [emails, phones, co].filter(x=>x&&x!=="—").join(" · ") || "no contact details";
+      return `<label class="dup-row">
+        <input type="radio" name="keep_${gi}" value="${m.id}" ${mi===0?"checked":""}>
+        <div class="dup-info"><div class="dup-name">${escapeHTML(memberName(m))}</div><div class="dup-meta">${escapeHTML(meta)}</div></div>
+      </label>`;
+    }).join("");
+    return `<div class="dup-cluster" data-gi="${gi}" data-sig="${escapeHTML(clusterSig(g))}">
+      <div class="dup-clabel">${g.length} possible matches — keep:</div>
+      ${rows}
+      <div class="dup-actions">
+        <button class="btn ghost sm" data-dismiss="${gi}">Not duplicates</button>
+        <button class="btn sm" data-merge="${gi}">Merge into selected</button>
+      </div>
+    </div>`;
+  }).join("");
+  // wire each cluster (capture its members)
+  clusters.forEach((g,gi)=>{
+    const el = body.querySelector(`.dup-cluster[data-gi="${gi}"]`);
+    el.querySelector(`[data-merge="${gi}"]`).onclick = ()=>{
+      const keepId = el.querySelector(`input[name="keep_${gi}"]:checked`).value;
+      const others = g.map(m=>m.id).filter(id=>id!==keepId);
+      mergeMembers(keepId, others);
+      renderMembers(); renderDuplicates();
+      toast(`Merged ${others.length+1} contacts into one`);
+    };
+    el.querySelector(`[data-dismiss="${gi}"]`).onclick = ()=>{
+      if(!Array.isArray(db.dismissedDupes)) db.dismissedDupes = [];
+      db.dismissedDupes.push(clusterSig(g)); save();
+      renderDuplicates();
+    };
+  });
 }
 
 /* ───────────────────────── Backup (JSON) + nudge ───────────────────────── */
@@ -3108,12 +3374,14 @@ function buildImportRow(r){
 
   let name = get("name");
   if(!name){ name = [get("first"), get("last")].filter(Boolean).join(" "); }
-  const email = get("email");
+  const allEmails = [...new Set(getAll("email").map(e=>e.trim()).filter(Boolean))];
+  const email = allEmails[0] || "";
   if(!name && !email) return null; // nothing usable
 
   const data = { name: name || email };
-  if(email) data.email = email;
-  const phone = get("phone"); if(phone) data.phone = phone;
+  if(allEmails.length) data.email = allEmails;                       // multi-value
+  const allPhones = [...new Set(getAll("phone").map(p=>p.trim()).filter(Boolean))];
+  if(allPhones.length) data.phone = allPhones.map((p,i)=>({ num:p, wa:i===0 }));  // first = WhatsApp by default
   const notes = get("notes"); if(notes) data.notes = notes;
 
   const labels = [];
@@ -3135,7 +3403,7 @@ function buildImportRow(r){
 }
 
 function previewImport(){
-  const existingEmails = new Set(db.members.map(m=>(m.data.email||"").toLowerCase()).filter(Boolean));
+  const existingEmails = new Set(db.members.flatMap(m=>emailsOf(m).map(e=>e.toLowerCase())));
   const seen = new Set();
   let willImport=0, dupes=0, badDates=0, skipped=0;
   csvState.rows.forEach(r=>{
@@ -3163,7 +3431,7 @@ function updateCsvCount(){
 }
 
 function doImport(){
-  const existingEmails = new Set(db.members.map(m=>(m.data.email||"").toLowerCase()).filter(Boolean));
+  const existingEmails = new Set(db.members.flatMap(m=>emailsOf(m).map(e=>e.toLowerCase())));
   const seen = new Set();
   const today = isoLocal(new Date());
   let added=0, dupes=0, badDates=0;
@@ -3232,6 +3500,9 @@ document.getElementById("searchInput").oninput = e=>{ query=e.target.value; rend
 document.getElementById("labelFilter").onchange = e=>{ labelFilterVal=e.target.value; renderMembers(); };
 document.getElementById("horizonFilter").onchange = renderUpcoming;
 document.getElementById("btnNewMember").onclick = ()=>openMember();
+document.getElementById("btnDupes").onclick = openDuplicates;
+document.getElementById("btnCloseDupes").onclick = closeDuplicates;
+document.getElementById("dupModal").onclick = e=>{ if(e.target.id==="dupModal") closeDuplicates(); };
 document.getElementById("btnNewField").onclick = ()=>openFieldModal();
 
 document.getElementById("btnTemplates").onclick = openTemplates;
