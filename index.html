@@ -474,6 +474,26 @@
     .member-email { display: none; }
     thead th.hide-sm, tbody td.hide-sm { display: none; }
   }
+
+  /* ── Address labels ── */
+  .lp-overlay { position: fixed; inset: 0; z-index: 90; background: #e9ecef; display: flex; flex-direction: column; }
+  .lp-controls { display: flex; align-items: center; gap: 12px; padding: 12px 18px; background: var(--card); border-bottom: 1px solid var(--line); box-shadow: var(--shadow-sm); }
+  .lp-controls .grow { flex: 1; }
+  .lp-scroll { flex: 1; overflow: auto; padding: 24px; display: flex; justify-content: center; }
+  .lp-sheet { background: #fff; box-shadow: var(--shadow-md); display: grid; align-content: start; }
+  .lp-cell { overflow: hidden; box-sizing: border-box; padding: 4mm 5mm; break-inside: avoid; outline: 1px dashed #d0d4d9; }
+  .lp-cell .lp-name { font-weight: 700; }
+  .lp-cell .lp-co { color: #333; }
+  .lp-cell .lp-addr { white-space: pre-line; color: #222; }
+
+  @media print {
+    body > *:not(#labelPrint):not(#lpStyle) { display: none !important; }
+    #labelPrint { position: static !important; background: #fff; }
+    .lp-controls { display: none !important; }
+    .lp-scroll { overflow: visible; padding: 0; display: block; }
+    .lp-sheet { box-shadow: none; }
+    .lp-cell { outline: none !important; }
+  }
 </style>
 </head>
 <body>
@@ -556,6 +576,7 @@
       </div>
       <select class="filter" id="labelFilter"><option value="">All labels</option></select>
       <button class="btn ghost" id="btnNeedsAttn" title="Show only people with something due or gone quiet">⚡ Needs attention</button>
+      <button class="btn ghost" id="btnLabels" title="Print address labels for the people shown below">🖨 Labels</button>
       <button class="btn ghost" id="btnImportCsv">↧ Import CSV</button>
       <button class="btn" id="btnNewMember">+ New member</button>
     </div>
@@ -733,6 +754,24 @@
   </div>
 </div>
 
+<!-- ── Address-label print view ── -->
+<div class="lp-overlay hide" id="labelPrint">
+  <div class="lp-controls">
+    <strong>Print address labels</strong>
+    <select id="lpPreset" class="filter">
+      <option value="a4_21">A4 · 21 per sheet (Avery L7160, 3×7)</option>
+      <option value="a4_24">A4 · 24 per sheet (3×8)</option>
+      <option value="us_30">US Letter · 30 per sheet (Avery 5160, 3×10)</option>
+    </select>
+    <span id="lpCount" class="inbox-status"></span>
+    <span class="grow"></span>
+    <button class="btn ghost" id="lpClose">Close</button>
+    <button class="btn" id="lpPrintBtn">🖨 Print</button>
+  </div>
+  <div class="lp-scroll"><div class="lp-sheet" id="lpSheet"></div></div>
+</div>
+<style id="lpStyle"></style>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -774,10 +813,12 @@ function defaultTemplates(){
 function defaultData(){
   return {
     fields: [
-      { id:"name",   label:"Name",   type:"text",  system:true, required:true, showInTable:true, order:0 },
-      { id:"email",  label:"Email",  type:"email", system:true, showInTable:true, order:1 },
-      { id:"phone",  label:"Phone",  type:"phone", showInTable:false, order:2 },
-      { id:"labels", label:"Labels", type:"tags",  showInTable:true, order:3 },
+      { id:"name",    label:"Name",    type:"text",  system:true, required:true, showInTable:true, order:0 },
+      { id:"email",   label:"Email",   type:"email", system:true, showInTable:true, order:1 },
+      { id:"phone",   label:"Phone",   type:"phone", showInTable:false, order:2 },
+      { id:"company", label:"Company", type:"text",  showInTable:true, order:2.3 },
+      { id:"address", label:"Postal address", type:"textarea", showInTable:false, order:2.6 },
+      { id:"labels",  label:"Labels",  type:"tags",  showInTable:true, order:3 },
       { id:"dates",  label:"Dates",  type:"datelist", system:true, options:[...DEFAULT_DATE_TYPES], showInTable:true, order:4 },
       { id:"notes",  label:"Notes",  type:"textarea", showInTable:false, order:5 },
     ],
@@ -805,6 +846,9 @@ function migrate(d){
   }
   if(!Array.isArray(d.templates) || !d.templates.length) d.templates = defaultTemplates();
   if(!Array.isArray(d.voiceSamples)) d.voiceSamples = [];
+  // add Company + Postal address to existing setups (for label printing / fuller contacts)
+  if(!d.fields.some(f=>f.id==="company")) d.fields.push({ id:"company", label:"Company", type:"text", showInTable:true, order:2.3 });
+  if(!d.fields.some(f=>f.id==="address")) d.fields.push({ id:"address", label:"Postal address", type:"textarea", showInTable:false, order:2.6 });
   return d;
 }
 
@@ -1092,6 +1136,45 @@ function refreshLabelFilter(){
   sel.innerHTML = `<option value="">All labels</option>` + [...labels].sort().map(l=>`<option value="${escapeHTML(l)}">${escapeHTML(l)}</option>`).join("");
   sel.value = cur;
 }
+
+/* ───────────────────────── Address labels (print) ───────────────────────── */
+// exact-ish sheet specs (mm). margins are the page's top/left to the first label.
+const LP_PRESETS = {
+  a4_21: { page:"A4",     cols:3, w:63.5, h:38.1, colGap:2.54, rowGap:0, mTop:15.1, mLeft:7.2 },
+  a4_24: { page:"A4",     cols:3, w:64.0, h:33.9, colGap:2.0,  rowGap:0, mTop:12.9, mLeft:9.8 },
+  us_30: { page:"letter", cols:3, w:66.7, h:25.4, colGap:3.0,  rowGap:0, mTop:12.7, mLeft:4.8 },
+};
+function labelMembers(){
+  // everyone currently shown in the Members list who has a postal address
+  return db.members.filter(memberMatches).sort(compareMembers).filter(m=>(m.data.address||"").trim());
+}
+function applyLabelStyle(key){
+  const p = LP_PRESETS[key] || LP_PRESETS.a4_21;
+  document.getElementById("lpStyle").textContent =
+    `#lpSheet{ grid-template-columns: repeat(${p.cols}, ${p.w}mm); column-gap:${p.colGap}mm; row-gap:${p.rowGap}mm; padding:${p.mTop}mm 0 0 ${p.mLeft}mm; width:${p.page==="A4"?210:215.9}mm; }`
+  + ` .lp-cell{ width:${p.w}mm; height:${p.h}mm; font-size:${p.h<28?9:10}pt; line-height:1.28; }`
+  + ` @media print{ @page{ size:${p.page}; margin:${p.mTop}mm 6mm 6mm ${p.mLeft}mm; } #lpSheet{ padding:0; width:auto; } }`;
+}
+function renderLabels(){
+  const key = document.getElementById("lpPreset").value;
+  applyLabelStyle(key);
+  const rows = labelMembers();
+  const total = db.members.filter(memberMatches).length;
+  const skipped = total - rows.length;
+  document.getElementById("lpCount").textContent =
+    `${rows.length} label${rows.length===1?"":"s"}` + (skipped ? ` · ${skipped} skipped (no address)` : "");
+  document.getElementById("lpSheet").innerHTML = rows.map(m=>{
+    const co = (m.data.company||"").trim();
+    const addr = (m.data.address||"").trim();
+    return `<div class="lp-cell">
+      <div class="lp-name">${escapeHTML(memberName(m))}</div>
+      ${co ? `<div class="lp-co">${escapeHTML(co)}</div>` : ""}
+      <div class="lp-addr">${escapeHTML(addr)}</div>
+    </div>`;
+  }).join("") || `<div style="padding:24px;color:var(--grey)">No one in the current view has a postal address yet. Add addresses (or clear filters), then try again.</div>`;
+}
+function openLabels(){ renderLabels(); document.getElementById("labelPrint").classList.remove("hide"); }
+function closeLabels(){ document.getElementById("labelPrint").classList.add("hide"); }
 
 /* ───────────────────────── Render: upcoming ───────────────────────── */
 function dateListFields(){ return db.fields.filter(f=>f.type==="datelist"); }
@@ -2732,6 +2815,11 @@ document.getElementById("btnWeekClose").onclick = closeWeek;
 document.getElementById("btnWeekRegen").onclick = planWeek;
 document.getElementById("weekModal").onclick = e=>{ if(e.target.id==="weekModal") closeWeek(); };
 
+document.getElementById("btnLabels").onclick = openLabels;
+document.getElementById("lpClose").onclick = closeLabels;
+document.getElementById("lpPreset").onchange = renderLabels;
+document.getElementById("lpPrintBtn").onclick = ()=> window.print();
+
 document.getElementById("btnImportCsv").onclick = openCsv;
 document.getElementById("btnCancelCsv").onclick = closeCsv;
 document.getElementById("btnDoImport").onclick = doImport;
@@ -2765,7 +2853,7 @@ inboxPaste.ondrop = e=>{
 };
 
 document.addEventListener("keydown", e=>{
-  if(e.key==="Escape"){ closeDrawer(); closeFieldModal(); closeTemplates(); closeCsv(); closeWeek(); closeSb(); }
+  if(e.key==="Escape"){ closeDrawer(); closeFieldModal(); closeTemplates(); closeCsv(); closeWeek(); closeSb(); closeLabels(); }
 });
 
 // local-first: works fully offline; flush queued changes to the cloud when back online
