@@ -857,6 +857,11 @@
       <option value="a4_24">A4 · 24 per sheet (3×8)</option>
       <option value="us_30">US Letter · 30 per sheet (Avery 5160, 3×10)</option>
     </select>
+    <select id="lpAddrSrc" class="filter" title="Which address to print">
+      <option value="both">Personal, else company</option>
+      <option value="personal">Personal address</option>
+      <option value="company">Company address</option>
+    </select>
     <span id="lpCount" class="inbox-status"></span>
     <span class="grow"></span>
     <button class="btn ghost" id="lpClose">Close</button>
@@ -1276,9 +1281,17 @@ const LP_PRESETS = {
   a4_24: { page:"A4",     cols:3, w:64.0, h:33.9, colGap:2.0,  rowGap:0, mTop:12.9, mLeft:9.8 },
   us_30: { page:"letter", cols:3, w:66.7, h:25.4, colGap:3.0,  rowGap:0, mTop:12.7, mLeft:4.8 },
 };
-function labelMembers(){
-  // everyone currently shown in the Members list who has a postal address
-  return db.members.filter(memberMatches).sort(compareMembers).filter(m=>(m.data.address||"").trim());
+function mailingAddressFor(m, src){
+  const personal = (m.data.address||"").trim();
+  const co = companyById(m.data.company);
+  const companyAddr = co ? (co.address||"").trim() : "";
+  if(src==="company")  return companyAddr;
+  if(src==="personal") return personal;
+  return personal || companyAddr;   // "both" = personal, fall back to company
+}
+function labelMembers(src){
+  // everyone currently shown in the Members list who has a usable address for the chosen source
+  return db.members.filter(memberMatches).sort(compareMembers).filter(m=>mailingAddressFor(m, src));
 }
 function applyLabelStyle(key){
   const p = LP_PRESETS[key] || LP_PRESETS.a4_21;
@@ -1289,15 +1302,17 @@ function applyLabelStyle(key){
 }
 function renderLabels(){
   const key = document.getElementById("lpPreset").value;
+  const src = document.getElementById("lpAddrSrc").value;
   applyLabelStyle(key);
-  const rows = labelMembers();
+  const rows = labelMembers(src);
   const total = db.members.filter(memberMatches).length;
   const skipped = total - rows.length;
+  const noun = src==="company" ? "no company address" : src==="personal" ? "no personal address" : "no address";
   document.getElementById("lpCount").textContent =
-    `${rows.length} label${rows.length===1?"":"s"}` + (skipped ? ` · ${skipped} skipped (no address)` : "");
+    `${rows.length} label${rows.length===1?"":"s"}` + (skipped ? ` · ${skipped} skipped (${noun})` : "");
   document.getElementById("lpSheet").innerHTML = rows.map(m=>{
     const co = companyName(m.data.company).trim();
-    const addr = (m.data.address||"").trim();
+    const addr = mailingAddressFor(m, src);
     return `<div class="lp-cell">
       <div class="lp-name">${escapeHTML(memberName(m))}</div>
       ${co ? `<div class="lp-co">${escapeHTML(co)}</div>` : ""}
@@ -3276,6 +3291,7 @@ document.getElementById("askInput").addEventListener("keydown", e=>{ if(e.key===
 document.getElementById("btnLabels").onclick = openLabels;
 document.getElementById("lpClose").onclick = closeLabels;
 document.getElementById("lpPreset").onchange = renderLabels;
+document.getElementById("lpAddrSrc").onchange = renderLabels;
 document.getElementById("lpPrintBtn").onclick = ()=> window.print();
 
 document.getElementById("btnImportCsv").onclick = openCsv;
