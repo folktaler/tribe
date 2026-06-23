@@ -2591,11 +2591,16 @@ async function getSupabaseClient(){
   if(sbClient) return sbClient;
   const m = await import("https://esm.sh/@supabase/supabase-js@2");
   sbClient = m.createClient(SB_URL, SB_ANON_KEY, { auth:{ persistSession:true, storageKey:"tribe_sb_session", autoRefreshToken:true, detectSessionInUrl:true } });
-  // catches sign-in via a clicked magic link (when the app is hosted at a URL)
+  // keeps UI in sync with auth (restored session on load, clicked magic link, token refresh, sign-out elsewhere)
   sbClient.auth.onAuthStateChange(async (_e, session)=>{
-    if(session && session.user && !sbOn()){
-      sbUser = session.user;
-      try { await sbPull(); sbState="ready"; lastSbSnapshot = JSON.stringify(db); setSbStatus(`Signed in as ${sbUser.email} · synced`); updateSbUI(); toast("Cloud sync on ✓"); } catch(e){ setSbDot("fail"); }
+    if(session && session.user){
+      const wasOff = !sbOn();
+      sbUser = session.user; sbState = "ready"; updateSbUI();   // recognise the session FIRST — never gated on the data pull
+      if(wasOff){
+        try { await sbPull(); lastSbSnapshot = JSON.stringify(db); } catch(e){ setSbDot(navigator.onLine ? "fail" : "pending"); }
+      }
+    } else if(!session && sbState!=="off"){
+      sbUser = null; sbState = "off"; updateSbUI();
     }
   });
   return sbClient;
@@ -2690,9 +2695,8 @@ async function sbInit(){
     const c = await getSupabaseClient();
     const { data } = await c.auth.getSession();
     if(!data.session){ setSbDot("idle"); return; }
-    sbUser = data.session.user;
-    await sbPull();
-    sbState = "ready"; lastSbSnapshot = JSON.stringify(db); updateSbUI();
+    sbUser = data.session.user; sbState = "ready"; updateSbUI();   // signed in — independent of the data pull
+    try { await sbPull(); lastSbSnapshot = JSON.stringify(db); } catch(e){ setSbDot(navigator.onLine ? "fail" : "pending"); }
   } catch(e){ setSbDot(navigator.onLine ? "fail" : "pending"); }
 }
 
