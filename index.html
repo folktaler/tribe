@@ -475,6 +475,26 @@
     thead th.hide-sm, tbody td.hide-sm { display: none; }
   }
 
+  /* ── Ask (chat) ── */
+  .ask-wrap { display: flex; flex-direction: column; height: calc(100vh - 320px); min-height: 360px; }
+  .ask-log { flex: 1; overflow-y: auto; padding: 4px 2px 12px; display: flex; flex-direction: column; gap: 12px; }
+  .ask-empty { color: var(--grey); font-size: 0.88rem; line-height: 1.6; padding: 8px 2px; }
+  .ask-empty b { color: var(--ink-2); }
+  .ask-eg { display: inline-block; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 5px 11px; margin: 4px 6px 0 0; font-size: 0.82rem; color: var(--ink-2); cursor: pointer; }
+  .ask-eg:hover { border-color: var(--accent); color: var(--accent-ink); }
+  .ask-msg { max-width: 88%; }
+  .ask-msg.user { align-self: flex-end; background: var(--ink); color: #fff; border-radius: 14px 14px 4px 14px; padding: 9px 14px; font-size: 0.9rem; }
+  .ask-msg.bot { align-self: flex-start; background: var(--card); border: 1px solid var(--line); border-radius: 14px 14px 14px 4px; padding: 12px 14px; box-shadow: var(--shadow-sm); }
+  .ask-msg.bot .ask-title { font-weight: 600; color: var(--ink); margin-bottom: 8px; }
+  .ask-results { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ask-chip { display: inline-flex; align-items: center; gap: 7px; background: #f1f5f9; border-radius: 20px; padding: 3px 10px 3px 3px; font-size: 0.82rem; color: var(--ink-2); cursor: pointer; }
+  .ask-chip:hover { background: #e7f9ea; color: var(--accent-ink); }
+  .ask-chip .avatar { width: 22px; height: 22px; font-size: 0.62rem; }
+  .ask-actions { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .ask-input { display: flex; gap: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
+  .ask-input input { flex: 1; padding: 11px 14px; border: 1px solid var(--line); border-radius: 10px; outline: none; font-size: 0.92rem; }
+  .ask-input input:focus { border-color: var(--grey-2); }
+
   /* ── Address labels ── */
   .lp-overlay { position: fixed; inset: 0; z-index: 90; background: #e9ecef; display: flex; flex-direction: column; }
   .lp-controls { display: flex; align-items: center; gap: 12px; padding: 12px 18px; background: var(--card); border-bottom: 1px solid var(--line); box-shadow: var(--shadow-sm); }
@@ -529,6 +549,7 @@
   <!-- Tabs -->
   <div class="tabs">
     <button class="tab active" data-tab="outreach">Outreach <span class="count" id="cOutreach"></span></button>
+    <button class="tab" data-tab="ask">Ask</button>
     <button class="tab" data-tab="inbox">Inbox</button>
     <button class="tab" data-tab="members">Members <span class="count" id="cMembers"></span></button>
     <button class="tab" data-tab="upcoming">Upcoming <span class="count" id="cUpcoming"></span></button>
@@ -543,6 +564,17 @@
       <button class="btn ghost sm" id="btnTemplates">✎ Templates</button>
     </div>
     <div id="outreachWrap"></div>
+  </div>
+
+  <!-- ── Ask tab (chat over your contacts) ── -->
+  <div id="tab-ask" class="hide">
+    <div class="ask-wrap">
+      <div class="ask-log" id="askLog"></div>
+      <div class="ask-input">
+        <input type="text" id="askInput" placeholder="Ask about your contacts… e.g. “who's a gemini or taurus?”">
+        <button class="btn" id="askSendBtn">Ask</button>
+      </div>
+    </div>
   </div>
 
   <!-- ── Inbox tab ── -->
@@ -975,7 +1007,7 @@ function renderStats(){
 }
 
 /* ───────────────────────── Render: members table ───────────────────────── */
-let sortKey = "name", sortDir = 1, query = "", labelFilterVal = "", newThisMonthOnly = false, needsAttentionOnly = false;
+let sortKey = "name", sortDir = 1, query = "", labelFilterVal = "", newThisMonthOnly = false, needsAttentionOnly = false, askMatchIds = null;
 
 function tableColumns(){
   // member column always first, then fields flagged showInTable (excluding name which is the member col)
@@ -1018,6 +1050,7 @@ function signalChip(m){
 }
 
 function memberMatches(m){
+  if(askMatchIds){ if(!askMatchIds.has(m.id)) return false; }
   if(needsAttentionOnly && !needsAttention(m)) return false;
   if(newThisMonthOnly){
     const now = new Date(); const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
@@ -1086,10 +1119,11 @@ function renderMembers(){
     </div>`;
     return;
   }
-  const chipText = needsAttentionOnly ? "Showing people who need attention"
+  const chipText = askMatchIds ? `Showing ${askMatchIds.size} from your question`
+    : needsAttentionOnly ? "Showing people who need attention"
     : newThisMonthOnly ? "Showing members added this month" : "";
   const chip = chipText ? `<div class="list-filter">${chipText} <button class="lf-clear" type="button">Clear</button></div>` : "";
-  const clearFilters = ()=>{ newThisMonthOnly=false; needsAttentionOnly=false; const b=document.getElementById("btnNeedsAttn"); if(b) b.classList.remove("active"); renderMembers(); };
+  const clearFilters = ()=>{ newThisMonthOnly=false; needsAttentionOnly=false; askMatchIds=null; const b=document.getElementById("btnNeedsAttn"); if(b) b.classList.remove("active"); renderMembers(); };
 
   if(!rows.length){
     wrap.innerHTML = chip + `<div class="empty"><div class="big">🔍</div><h3>No matches</h3><p>Try a different search or filter.</p></div>`;
@@ -1175,6 +1209,188 @@ function renderLabels(){
 }
 function openLabels(){ renderLabels(); document.getElementById("labelPrint").classList.remove("hide"); }
 function closeLabels(){ document.getElementById("labelPrint").classList.add("hide"); }
+
+/* ───────────────────────── Ask (AI plans the query, code executes it) ───────────────────────── */
+function birthOf(m){
+  const e = (m.data.dates||[]).find(x=>/birth/i.test(x.type||""));
+  if(!e || !e.date) return null;
+  const [y,mo,d] = e.date.split("-").map(Number);
+  if(!mo || !d) return null;
+  return { y:y||null, mo, d };
+}
+function zodiacSign(m, d){
+  const after = (mm, dd) => (m > mm) || (m === mm && d >= dd);
+  if(after(12,22) || !after(1,20)) return "capricorn";
+  if(!after(2,19)) return "aquarius";
+  if(!after(3,21)) return "pisces";
+  if(!after(4,20)) return "aries";
+  if(!after(5,21)) return "taurus";
+  if(!after(6,21)) return "gemini";
+  if(!after(7,23)) return "cancer";
+  if(!after(8,23)) return "leo";
+  if(!after(9,23)) return "virgo";
+  if(!after(10,23)) return "libra";
+  if(!after(11,22)) return "scorpio";
+  return "sagittarius";
+}
+function memberZodiac(m){ const b = birthOf(m); return b ? zodiacSign(b.mo, b.d) : null; }
+function memberAge(m){
+  const b = birthOf(m); if(!b || !b.y) return null;
+  const t = todayMidnight(); let a = t.getFullYear() - b.y;
+  if((t.getMonth()+1) < b.mo || ((t.getMonth()+1)===b.mo && t.getDate() < b.d)) a--;
+  return a;
+}
+function memberQuietDays(m){ return daysSince(lastContactISO(m) || m.createdAt); }
+function memberUpcomingDays(m){
+  let best = Infinity;
+  dateListFields().forEach(f => (m.data[f.id]||[]).forEach(e => {
+    if(e && e.date){ const r = nextOccurrence(e.date, e.recurrence); if(r && r.daysUntil>=0) best = Math.min(best, r.daysUntil); }
+  }));
+  return best;
+}
+function cmpNum(a, op, b){ if(a==null) return false; b = Number(b); return op==="gte"?a>=b:op==="lte"?a<=b:op==="gt"?a>b:op==="lt"?a<b:op==="eq"?a===b:false; }
+function arr(v){ return Array.isArray(v) ? v : [v]; }
+function condMatch(m, c){
+  const v = c.value, op = c.op || "eq";
+  switch(c.field){
+    case "zodiac":   { const z = memberZodiac(m); return !!z && arr(v).map(x=>String(x).toLowerCase()).includes(z); }
+    case "label":    { const labs = (m.data.labels||[]).map(x=>String(x).toLowerCase()); return arr(v).some(x=>labs.includes(String(x).toLowerCase())); }
+    case "company":  return (m.data.company||"").toLowerCase().includes(String(v).toLowerCase());
+    case "location": return ((m.data.address||"")+" "+(m.data.company||"")).toLowerCase().includes(String(v).toLowerCase());
+    case "hasEmail":   return (!!emailOf(m)) === (v!==false);
+    case "hasPhone":   return (!!waDigits(m)) === (v!==false);
+    case "hasAddress": return (!!(m.data.address||"").trim()) === (v!==false);
+    case "quietDays":    return cmpNum(memberQuietDays(m), op, v);
+    case "upcomingDays": return cmpNum(memberUpcomingDays(m), op, v);
+    case "birthdayMonth":{ const b = birthOf(m); return !!b && arr(v).map(Number).includes(b.mo); }
+    case "age":      return cmpNum(memberAge(m), op, v);
+    case "name":     return memberName(m).toLowerCase().includes(String(v).toLowerCase());
+    case "text":     return JSON.stringify(m.data).toLowerCase().includes(String(v).toLowerCase());
+    default:         return false;
+  }
+}
+function evalQuery(spec){
+  const conds = Array.isArray(spec.conditions) ? spec.conditions : [];
+  const all = spec.match !== "any";
+  return db.members.filter(m => conds.length===0 ? true : (all ? conds.every(c=>condMatch(m,c)) : conds.some(c=>condMatch(m,c))));
+}
+
+function askSystemPrompt(){
+  const today = isoLocal(new Date());
+  return `You translate a question about a contact list into a JSON query. Output ONLY one JSON object, no prose:
+{"title": string, "match": "all"|"any", "conditions": [ {"field": string, "op": string, "value": any} ], "action": null | {"type":"add_label"|"remove_label","label":string} }
+FIELDS and ops:
+- zodiac: op "in", value = array of lowercase signs (aries,taurus,gemini,cancer,leo,virgo,libra,scorpio,sagittarius,capricorn,aquarius,pisces)
+- label: op "in", value = array of label names
+- company: op "contains", value = string
+- location: op "contains", value = string (matches their address or company)
+- hasEmail / hasPhone / hasAddress: op "eq", value = true or false
+- quietDays: op "gte" or "lte", value = number of days since last contact
+- upcomingDays: op "lte", value = days until their next date
+- birthdayMonth: op "in", value = array of month numbers 1-12
+- age: op "gte" or "lte", value = number
+- name: op "contains", value = string
+- text: op "contains", value = string (free-text search across everything)
+Use "match":"any" for OR, "all" for AND. "title" = a short heading for the result. Set "action" ONLY if the user explicitly asks to tag/label/untag the matches; otherwise null. Today is ${today}.
+Examples:
+Q: who is a gemini or taurus? -> {"title":"Gemini & Taurus","match":"any","conditions":[{"field":"zodiac","op":"in","value":["gemini","taurus"]}],"action":null}
+Q: donors in bangalore i haven't talked to in 2 months -> {"title":"Quiet Bangalore donors","match":"all","conditions":[{"field":"label","op":"in","value":["Donor"]},{"field":"location","op":"contains","value":"bangalore"},{"field":"quietDays","op":"gte","value":60}],"action":null}
+Q: tag everyone with no email as "needs email" -> {"title":"No email","match":"all","conditions":[{"field":"hasEmail","op":"eq","value":false}],"action":{"type":"add_label","label":"needs email"}}`;
+}
+
+let askBusy = false;
+function askAppend(html, cls){ const log = document.getElementById("askLog"); const d = document.createElement("div"); d.className = "ask-msg " + cls; d.innerHTML = html; log.appendChild(d); log.scrollTop = log.scrollHeight; return d; }
+
+async function askSend(q){
+  q = (q!=null ? q : document.getElementById("askInput").value).trim();
+  if(!q || askBusy) return;
+  document.getElementById("askInput").value = "";
+  // clear the empty-state hint on first message
+  const empty = document.querySelector("#askLog .ask-empty"); if(empty) empty.remove();
+  askAppend(escapeHTML(q), "user");
+
+  if(aiState!=="ready"){ const thinking = askAppend("connecting to local AI…", "bot"); await enableAI(); thinking.remove(); }
+  if(aiState!=="ready"){ askAppend("Turn on local AI first (the ✨ button in the Inbox tab needs Ollama running).", "bot"); return; }
+
+  askBusy = true;
+  const thinking = askAppend("<span style='color:var(--grey)'>thinking…</span>", "bot");
+  let spec = null;
+  try {
+    const raw = await aiChat(askSystemPrompt(), q, { temp:0.1, max:400 });
+    const a = raw.indexOf("{"), b = raw.lastIndexOf("}");
+    if(a>=0 && b>a) spec = JSON.parse(raw.slice(a, b+1));
+  } catch(e){ spec = null; }
+  thinking.remove();
+  askBusy = false;
+
+  if(!spec || !Array.isArray(spec.conditions)){ askAppend("I couldn't turn that into a query — try rephrasing, e.g. <em>“donors I haven't contacted in 60 days”</em>.", "bot"); return; }
+  renderAskResult(spec);
+}
+
+let askLastResult = null;
+function renderAskResult(spec){
+  const matches = evalQuery(spec);
+  askLastResult = { spec, matches };
+  const title = spec.title || "Matches";
+  let html = `<div class="ask-title">${escapeHTML(title)} · ${matches.length} contact${matches.length===1?"":"s"}</div>`;
+  if(!matches.length){
+    html += `<div style="color:var(--grey);font-size:0.85rem">No one matches. (Tip: zodiac/age need a Birthday with a date on the contact.)</div>`;
+    askAppend(html, "bot"); return;
+  }
+  html += `<div class="ask-results">` + matches.slice(0,60).map(m=>
+    `<span class="ask-chip" data-id="${m.id}">${avatarHTML(m)}${escapeHTML(memberName(m))}</span>`
+  ).join("") + (matches.length>60 ? ` <span style="color:var(--grey-2);font-size:0.8rem">+${matches.length-60} more</span>` : "") + `</div>`;
+
+  const act = spec.action;
+  if(act && (act.type==="add_label" || act.type==="remove_label") && act.label){
+    const verb = act.type==="add_label" ? "Add" : "Remove";
+    html += `<div class="ask-actions">
+      <button class="btn sm" data-ask-act="label">${verb} label “${escapeHTML(act.label)}” on ${matches.length}</button>
+      <button class="btn ghost sm" data-ask-act="show">Show in Members</button>
+    </div>`;
+  } else {
+    html += `<div class="ask-actions"><button class="btn ghost sm" data-ask-act="show">Show in Members</button></div>`;
+  }
+
+  const el = askAppend(html, "bot");
+  el.querySelectorAll(".ask-chip").forEach(c => c.onclick = ()=> openMember(c.dataset.id));
+  const showBtn = el.querySelector('[data-ask-act="show"]'); if(showBtn) showBtn.onclick = ()=> askShowInMembers(matches);
+  const labelBtn = el.querySelector('[data-ask-act="label"]'); if(labelBtn) labelBtn.onclick = ()=> askApplyLabel(spec.action, matches, el);
+}
+
+function askApplyLabel(action, matches, el){
+  const label = action.label, add = action.type==="add_label";
+  if(!confirm(`${add?"Add":"Remove"} the label “${label}” ${add?"to":"from"} ${matches.length} contact${matches.length===1?"":"s"}?`)) return;
+  let n = 0;
+  matches.forEach(m => {
+    const labs = m.data.labels || [];
+    const has = labs.some(x=>x.toLowerCase()===label.toLowerCase());
+    if(add && !has){ labs.push(label); m.data.labels = labs; n++; }
+    else if(!add && has){ m.data.labels = labs.filter(x=>x.toLowerCase()!==label.toLowerCase()); n++; }
+  });
+  save(); renderAll();
+  if(el){ const a = el.querySelector(".ask-actions"); if(a) a.innerHTML = `<span style="color:var(--accent-ink);font-size:0.85rem">✓ ${add?"Added":"Removed"} on ${n} contact${n===1?"":"s"}.</span>`; }
+  toast(`${add?"Labelled":"Unlabelled"} ${n}`);
+}
+function askShowInMembers(matches){
+  const ids = new Set(matches.map(m=>m.id));
+  askMatchIds = ids;                 // members filter consults this
+  newThisMonthOnly = false; needsAttentionOnly = false;
+  switchTab("members"); renderMembers();
+}
+
+function renderAsk(){
+  const log = document.getElementById("askLog");
+  if(log && !log.children.length){
+    log.innerHTML = `<div class="ask-empty">Ask in plain English and your <b>local AI</b> turns it into a precise search — counts &amp; zodiac &amp; dates are computed exactly, in code.<br>
+      <span class="ask-eg">who's a gemini or taurus?</span>
+      <span class="ask-eg">donors I haven't contacted in 60 days</span>
+      <span class="ask-eg">contacts with no email</span>
+      <span class="ask-eg">people in Bangalore</span>
+      <span class="ask-eg">birthdays in June</span></div>`;
+    log.querySelectorAll(".ask-eg").forEach(e => e.onclick = ()=> askSend(e.textContent));
+  }
+}
 
 /* ───────────────────────── Render: upcoming ───────────────────────── */
 function dateListFields(){ return db.fields.filter(f=>f.type==="datelist"); }
@@ -2288,8 +2504,9 @@ function deleteField(){
 /* ───────────────────────── Tabs ───────────────────────── */
 function switchTab(name){
   document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active", t.dataset.tab===name));
-  ["outreach","inbox","members","upcoming","fields"].forEach(n=>document.getElementById("tab-"+n).classList.toggle("hide", n!==name));
+  ["outreach","ask","inbox","members","upcoming","fields"].forEach(n=>document.getElementById("tab-"+n).classList.toggle("hide", n!==name));
   if(name==="outreach") renderOutreach();
+  if(name==="ask") renderAsk();
   if(name==="upcoming") renderUpcoming();
   if(name==="fields") renderFields();
 }
@@ -2814,6 +3031,9 @@ document.getElementById("btnPlanWeek").onclick = planWeek;
 document.getElementById("btnWeekClose").onclick = closeWeek;
 document.getElementById("btnWeekRegen").onclick = planWeek;
 document.getElementById("weekModal").onclick = e=>{ if(e.target.id==="weekModal") closeWeek(); };
+
+document.getElementById("askSendBtn").onclick = ()=> askSend();
+document.getElementById("askInput").addEventListener("keydown", e=>{ if(e.key==="Enter") askSend(); });
 
 document.getElementById("btnLabels").onclick = openLabels;
 document.getElementById("lpClose").onclick = closeLabels;
