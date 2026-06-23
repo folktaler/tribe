@@ -392,15 +392,18 @@
 
   /* date list (repeatable dates) */
   .datelist .dl-rows { display: flex; flex-direction: column; gap: 7px; margin-bottom: 8px; }
-  .dl-row { display: grid; grid-template-columns: 1fr 130px 118px 26px; gap: 6px; align-items: center; }
-  .dl-row input, .dl-row select { width: 100%; padding: 7px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--card); color: var(--ink); outline: none; }
+  .dl-row { display: flex; flex-direction: column; gap: 6px; padding: 9px; border: 1px solid var(--line-soft); border-radius: 9px; background: #fcfcfd; }
+  .dl-row input, .dl-row select { padding: 7px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--card); color: var(--ink); outline: none; min-width: 0; }
   .dl-row input:focus, .dl-row select:focus { border-color: var(--grey-2); }
-  .dl-row .dl-rm { border: none; background: none; color: var(--grey-2); font-size: 0.9rem; padding: 0; cursor: pointer; }
+  .dl-r1 { display: flex; gap: 6px; align-items: center; }
+  .dl-r1 .dl-type { flex: 1; }
+  .dl-r2 { display: flex; gap: 6px; flex-wrap: wrap; }
+  .dl-mon { flex: 1 1 72px; }
+  .dl-day { flex: 0 0 56px; }
+  .dl-yr  { flex: 0 0 74px; }
+  .dl-rec { flex: 1 1 96px; }
+  .dl-row .dl-rm { border: none; background: none; color: var(--grey-2); font-size: 0.95rem; padding: 0 4px; cursor: pointer; }
   .dl-row .dl-rm:hover { color: #dc2626; }
-  @media (max-width: 520px) {
-    .dl-row { grid-template-columns: 1fr 1fr; grid-auto-rows: auto; }
-    .dl-row .dl-rm { grid-column: 2; justify-self: end; }
-  }
 
   /* ── Drawer detail tabs ── */
   .drawer-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin: -4px 0 18px; }
@@ -2197,14 +2200,25 @@ function tagsInputHTML(fid, tags){
   </div>`;
 }
 
+const MONTHS_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 function dateRowHTML(f, e, dlid){
   e = e || {};
+  const [yy,mm,dd] = (e.date||"").split("-").map(Number);
+  const y = (yy && yy>0) ? yy : "";
   const recOpts = RECURRENCE.map(r=>`<option value="${r.v}" ${(e.recurrence||"yearly")===r.v?"selected":""}>${r.label}</option>`).join("");
+  const monOpts = `<option value="">Month</option>` + MONTHS_SHORT.map((nm,i)=>`<option value="${i+1}" ${mm===i+1?"selected":""}>${nm}</option>`).join("");
+  let dayOpts = `<option value="">Day</option>`; for(let i=1;i<=31;i++) dayOpts += `<option value="${i}" ${dd===i?"selected":""}>${i}</option>`;
   return `<div class="dl-row">
-    <input class="dl-type" list="${dlid}" placeholder="Type" value="${escapeHTML(e.type||"")}">
-    <input class="dl-date" type="date" value="${escapeHTML(e.date||"")}">
-    <select class="dl-rec">${recOpts}</select>
-    <button type="button" class="dl-rm" title="Remove">✕</button>
+    <div class="dl-r1">
+      <input class="dl-type" list="${dlid}" placeholder="Type (e.g. Birthday)" value="${escapeHTML(e.type||"")}">
+      <button type="button" class="dl-rm" title="Remove">✕</button>
+    </div>
+    <div class="dl-r2">
+      <select class="dl-mon" title="Month">${monOpts}</select>
+      <select class="dl-day" title="Day">${dayOpts}</select>
+      <input class="dl-yr" type="number" min="1900" max="2200" placeholder="year" value="${y}" title="Year — optional, leave blank for birthdays">
+      <select class="dl-rec">${recOpts}</select>
+    </div>
   </div>`;
 }
 function dateListHTML(f, entries){
@@ -2396,8 +2410,10 @@ function collectDrawerData(){
   document.querySelectorAll("#drawerBody .datelist").forEach(c=>{
     const arr = [];
     c.querySelectorAll(".dl-row").forEach(r=>{
-      const date = r.querySelector(".dl-date").value;
-      if(!date) return; // skip incomplete rows
+      const mo = +r.querySelector(".dl-mon").value, da = +r.querySelector(".dl-day").value;
+      if(!mo || !da) return; // need at least a month + day
+      const yr = parseInt(r.querySelector(".dl-yr").value, 10) || 0;   // 0 = no year (recurs, no age shown)
+      const date = `${String(yr).padStart(4,"0")}-${String(mo).padStart(2,"0")}-${String(da).padStart(2,"0")}`;
       arr.push({
         type: r.querySelector(".dl-type").value.trim(),
         date,
