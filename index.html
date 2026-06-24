@@ -11,25 +11,110 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>(function(){try{var t=localStorage.getItem('tribe-theme');if(t==='dark'||(!t&&window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.classList.add('dark');}catch(e){}})();</script>
 <style>
+  /* ──────────────────────────────────────────────────────────────────────
+     Ghost design tokens — lifted verbatim from TryGhost/Ghost (MIT):
+       apps/shade/tailwind.theme.css (primitives) + theme-variables.css (roles).
+     Tribe's local vars below now resolve to these, so the whole app inherits
+     Ghost's palette, shadows and radii. See ~/toolkit/theme.css for the full
+     shared theme. Pilot: light only (dark toggle is a follow-up).
+     ────────────────────────────────────────────────────────────────────── */
   :root {
+    /* Ghost colour primitives (oklch, verbatim) */
+    --color-white:    oklch(100% 0 0);
+    --color-black:    oklch(20.38% 0.0067 258.4);
+    --color-grey-50:  oklch(98.54% 0.0013 286.4);
+    --color-grey-100: oklch(96.97% 0.0017 247.8);
+    --color-grey-200: oklch(94.74% 0.0042 236.5);
+    --color-grey-400: oklch(86.68% 0.0095 242.9);
+    --color-grey-500: oklch(77.55% 0.0174 250.9);
+    --color-grey-700: oklch(62.98% 0.0286 248.3);
+    --color-grey-900: oklch(36.77% 0.0153 248.2);
+    --color-grey-950: oklch(25.95% 0.0063 258.4);
+    --color-green-400: oklch(79.04% 0.1936 145.5);
+    --color-green-500: oklch(74.81% 0.2213 144.4);  /* Ghost membership green */
+    --color-green-700: oklch(55.58% 0.1604 144.5);
+    --color-blue-500:  oklch(74.03% 0.1559 235.9);
+    --color-yellow-400: oklch(84.87% 0.1508 81.3);
+    --color-yellow-500: oklch(82.04% 0.1655 77.3);
+    --color-purple-400: oklch(64.94% 0.2182 298.5);
+    --color-purple-500: oklch(58.34% 0.2584 295.5);
+    --color-red-500:   oklch(61.27% 0.2462 26.4);
+
+    /* Ghost semantic roles (light) */
+    --text-primary:   var(--color-black);
+    --text-secondary: var(--color-grey-700);
+    --text-tertiary:  var(--color-grey-400);
+    --border:         var(--color-grey-200);
+    --border-strong:  var(--color-grey-500);
+    --surface-panel:  var(--color-white);
+
+    /* Ghost shadows + easing (verbatim) */
+    --shadow-sm: 0 0 1px rgba(0,0,0,.12), 0 1px 6px rgba(0,0,0,0.03), 0 8px 10px -8px rgba(0,0,0,.1);
+    --shadow-md: 0 0 1px rgba(0,0,0,0.12), 0 1px 6px rgba(0,0,0,0.03), 0 8px 10px -8px rgba(0,0,0,0.05), 0px 24px 37px -21px rgba(0,0,0,0.05);
+    --shadow-lg: 0 0 7px rgba(0,0,0,0.08), 0 2.1px 2.2px -5px rgba(0,0,0,0.011), 0 5.1px 5.3px -5px rgba(0,0,0,0.016), 0 9.5px 10px -5px rgba(0,0,0,0.02), 0 17px 17.9px -5px rgba(0,0,0,0.024), 0 31.8px 33.4px -5px rgba(0,0,0,0.029), 0 76px 80px -5px rgba(0,0,0,0.04);
+    --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+    /* ── Tribe's own aliases — now pointed at Ghost ── */
     --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    --ink: #15171a;          /* primary text */
-    --ink-2: #394047;        /* strong secondary */
-    --grey: #7c8b9a;         /* secondary text */
-    --grey-2: #aeb7c1;       /* tertiary */
-    --line: #e3e6ea;         /* borders */
-    --line-soft: #eef0f2;
-    --bg: #f5f6f7;           /* page bg */
-    --card: #ffffff;
-    --accent: #30cf43;       /* Ghost membership green */
-    --accent-ink: #16a34a;
-    --blue: #3b82f6;
-    --radius: 10px;
-    --shadow-sm: 0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.06);
-    --shadow-md: 0 4px 18px rgba(0,0,0,0.10);
-    --shadow-lg: 0 8px 40px rgba(0,0,0,0.16);
+    --ink:       var(--text-primary);   /* primary text   */
+    --ink-2:     var(--color-grey-900);  /* strong secondary */
+    --grey:      var(--text-secondary);  /* secondary text  */
+    --grey-2:    var(--text-tertiary);   /* tertiary        */
+    --line:      var(--border);          /* borders         */
+    --line-soft: var(--color-grey-100);
+    --bg:        var(--color-grey-50);   /* page bg         */
+    --card:      var(--surface-panel);
+    --accent:    var(--color-green-500);
+    --accent-ink: var(--color-green-700);
+    --blue:      var(--color-blue-500);
+    --radius: 8px;            /* Ghost radius-surface */
+    --radius-control: 6px;    /* Ghost radius-control */
+    --surface-subtle: var(--color-grey-50);   /* recessed/raised neutral fills */
+    --chip-bg:        var(--color-grey-100);   /* neutral pill/chip background */
+    --inverse-fg:     #fff;                    /* text on a solid --ink surface */
   }
+
+  /* ── Dark mode — Ghost dark roles (toggle adds .dark on <html>) ── */
+  .dark {
+    --bg:            var(--color-black);
+    --surface-panel: var(--color-grey-950);    /* cards lift off pure black */
+    --surface-subtle: var(--color-grey-900);
+    --chip-bg:        var(--color-grey-900);
+    --ink:        var(--color-grey-200);
+    --ink-2:      var(--color-grey-100);
+    --grey:       var(--color-grey-400);
+    --grey-2:     var(--color-grey-500);
+    --line:       var(--color-grey-900);
+    --line-soft:  var(--color-grey-900);
+    --border:     var(--color-grey-900);
+    --border-strong: var(--color-grey-700);
+    --text-primary:   var(--color-grey-200);
+    --text-secondary: var(--color-grey-400);
+    --text-tertiary:  var(--color-grey-500);
+    --inverse-fg:     var(--color-black);      /* dark: --ink is light, so text on it goes dark */
+  }
+  /* Dark fixes for the few colour-pastel elements so they adapt instead of glaring */
+  .dark .pill.accent,
+  .dark .out-card.today .when-pill,
+  .dark .ix-head .reason,
+  .dark .ml-row .ml-primary { background: color-mix(in oklch, var(--accent) 22%, transparent); color: var(--color-green-400); }
+  .dark .out-context,
+  .dark .type-opt.sel,
+  .dark .ai-badge,
+  .dark #btnInboxAI.ai-on { background: color-mix(in oklch, var(--accent) 16%, transparent); border-color: color-mix(in oklch, var(--accent) 38%, transparent); color: var(--color-green-400); }
+  .dark .backup-banner,
+  .dark .gh-warn { background: color-mix(in oklch, var(--color-yellow-500) 15%, transparent); border-color: color-mix(in oklch, var(--color-yellow-500) 38%, transparent); color: var(--color-yellow-400); }
+  .dark .backup-banner .bb-msg,
+  .dark .backup-banner .bb-x { color: var(--color-yellow-400); }
+  .dark .btn.email,
+  .dark .btn.wa { background: var(--surface-panel); }
+  .dark .btn.ai-draft { background: color-mix(in oklch, var(--color-purple-500) 20%, transparent); border-color: color-mix(in oklch, var(--color-purple-500) 38%, transparent); color: var(--color-purple-400); }
+  .dark .btn.ai-draft:hover { background: color-mix(in oklch, var(--color-purple-500) 30%, transparent); }
+  /* primary-button hover should brighten (not go to #000) when primary is light in dark */
+  .dark .btn:not(.ghost):not(.danger):not(.email):not(.wa):not(.skip-btn):not(.skip):not(.ai-draft):hover,
+  .dark .act-add .act-add-btn:hover { background: var(--color-grey-100); }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -65,14 +150,14 @@
   .topbar .spacer { flex: 1; }
 
   .iconbtn {
-    width: 36px; height: 36px; border-radius: 8px;
+    width: 32px; height: 32px; border-radius: var(--radius-control);
     border: 1px solid var(--line); background: var(--card);
     display: flex; align-items: center; justify-content: center;
     color: var(--grey); font-size: 1rem; transition: all .12s;
   }
   .iconbtn:hover { color: var(--ink); border-color: var(--grey-2); }
   .cloud-btn { position: relative; }
-  .acct-btn { position: relative; display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 13px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--ink-2); font-size: 0.85rem; font-weight: 600; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: border-color .12s, background .12s; }
+  .acct-btn { position: relative; display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--card); color: var(--ink-2); font-size: 0.85rem; font-weight: 600; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: border-color .12s, background .12s; }
   .acct-btn:hover { border-color: var(--grey-2); }
   .acct-btn.signed-in { padding: 0 12px 0 5px; }
   .acct-ava { width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.74rem; font-weight: 700; }
@@ -112,32 +197,32 @@
     flex: 1; min-width: 180px; position: relative;
   }
   .search input {
-    width: 100%; padding: 9px 12px 9px 34px; border: 1px solid var(--line); border-radius: 8px;
+    width: 100%; padding: 7px 12px 7px 34px; border: 1px solid var(--line); border-radius: var(--radius-control);
     background: var(--card); color: var(--ink); outline: none; transition: border-color .12s;
   }
   .search input:focus { border-color: var(--grey-2); }
   .search svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--grey-2); }
   select.filter {
-    padding: 9px 30px 9px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--card);
+    padding: 7px 30px 7px 12px; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--card);
     color: var(--ink-2); outline: none; appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237c8b9a' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
     background-repeat: no-repeat; background-position: right 10px center;
   }
 
   .btn {
-    padding: 9px 16px; border-radius: 8px; border: 1px solid transparent; font-size: 0.88rem; font-weight: 600;
-    background: var(--ink); color: #fff; transition: opacity .12s, background .12s; white-space: nowrap;
+    padding: 7px 16px; border-radius: var(--radius-control); border: 1px solid transparent; font-size: 0.88rem; font-weight: 600;
+    background: var(--ink); color: var(--inverse-fg); transition: opacity .12s, background .12s; white-space: nowrap;
   }
   .btn:hover { background: #000; }
   .btn.ghost { background: var(--card); color: var(--ink-2); border-color: var(--line); }
-  .btn.ghost:hover { background: #fafbfc; border-color: var(--grey-2); }
+  .btn.ghost:hover { background: var(--surface-subtle); border-color: var(--grey-2); }
   .btn.sm { padding: 6px 11px; font-size: 0.8rem; }
   .btn.danger { background: #fff; color: #dc2626; border-color: #f3c9c9; }
   .btn.danger:hover { background: #fef2f2; }
 
   /* ── Table ── */
   .table-wrap { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
-  .list-filter { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #fafbfc; border-bottom: 1px solid var(--line); font-size: 0.82rem; color: var(--grey); }
+  .list-filter { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: var(--surface-subtle); border-bottom: 1px solid var(--line); font-size: 0.82rem; color: var(--grey); }
   .list-filter .lf-clear { margin-left: auto; border: 1px solid var(--line); background: var(--card); border-radius: 6px; padding: 4px 10px; font-size: 0.76rem; color: var(--ink-2); cursor: pointer; }
   .list-filter .lf-clear:hover { border-color: var(--grey-2); }
   .next-cell { white-space: nowrap; }
@@ -151,14 +236,14 @@
   table { width: 100%; border-collapse: collapse; }
   thead th {
     text-align: left; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
-    color: var(--grey); padding: 12px 16px; border-bottom: 1px solid var(--line); background: #fafbfc; user-select: none;
+    color: var(--grey); padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--surface-subtle); user-select: none;
   }
   thead th.sortable { cursor: pointer; }
   thead th.sortable:hover { color: var(--ink-2); }
   thead th .arrow { font-size: 0.6rem; margin-left: 3px; color: var(--grey-2); }
   tbody tr { border-bottom: 1px solid var(--line-soft); cursor: pointer; transition: background .1s; }
   tbody tr:last-child { border-bottom: none; }
-  tbody tr:hover { background: #fafbfc; }
+  tbody tr:hover { background: var(--surface-subtle); }
   tbody td { padding: 11px 16px; vertical-align: middle; color: var(--ink-2); }
 
   .member-cell { display: flex; align-items: center; gap: 11px; }
@@ -172,7 +257,7 @@
 
   .pill {
     display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 0.72rem; font-weight: 500;
-    background: #eef2f6; color: var(--ink-2); margin: 1px 2px 1px 0;
+    background: var(--chip-bg); color: var(--ink-2); margin: 1px 2px 1px 0;
   }
   .pill.accent { background: #e7f9ea; color: var(--accent-ink); }
 
@@ -210,7 +295,7 @@
   .inbox-bar .grow { flex: 1; }
   .inbox-status { font-size: 0.78rem; color: var(--grey); }
   #btnInboxAI.ai-on { background: #f3fdf4; color: var(--accent-ink); border-color: #bfe6cd; }
-  #aiModelSel { padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--ink-2); font-size: 0.8rem; outline: none; cursor: pointer; max-width: 160px; }
+  #aiModelSel { padding: 6px 8px; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--card); color: var(--ink-2); font-size: 0.8rem; outline: none; cursor: pointer; max-width: 160px; }
   #aiModelSel:hover { border-color: var(--grey-2); }
   .ix-section-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--grey); margin: 0 0 12px; }
   .ix-list { display: flex; flex-direction: column; gap: 12px; }
@@ -267,7 +352,7 @@
   /* ── Outreach ── */
   .out-section { margin-bottom: 26px; }
   .out-section > .sec-head { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--grey); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-  .out-section > .sec-head .n { background: var(--ink); color: #fff; border-radius: 20px; padding: 1px 8px; font-size: 0.7rem; }
+  .out-section > .sec-head .n { background: var(--ink); color: var(--inverse-fg); border-radius: 20px; padding: 1px 8px; font-size: 0.7rem; }
   .out-section.today > .sec-head .n { background: var(--accent-ink); }
   .out-list { display: flex; flex-direction: column; gap: 12px; }
   .out-card {
@@ -282,7 +367,7 @@
   .out-whotext { min-width: 0; }
   .out-top .who { font-weight: 600; color: var(--ink); }
   .out-top .why { font-size: 0.8rem; color: var(--grey); }
-  .out-top .when-pill { margin-left: auto; font-size: 0.72rem; font-weight: 600; padding: 3px 10px; border-radius: 20px; background: #eef2f6; color: var(--ink-2); white-space: nowrap; }
+  .out-top .when-pill { margin-left: auto; font-size: 0.72rem; font-weight: 600; padding: 3px 10px; border-radius: 20px; background: var(--chip-bg); color: var(--ink-2); white-space: nowrap; }
   .out-card.today .when-pill { background: #e7f9ea; color: var(--accent-ink); }
   .out-context { font-size: 0.8rem; color: var(--accent-ink); background: #f3fdf4; border: 1px solid #d6f0db; border-radius: 8px; padding: 7px 11px; margin-bottom: 10px; line-height: 1.45; }
   .out-draft { margin-bottom: 12px; }
@@ -292,7 +377,7 @@
   .out-draft .subj { width: 100%; padding: 7px 10px; border: 1px solid var(--line); border-radius: 7px; margin-bottom: 6px; outline: none; font-size: 0.84rem; color: var(--ink); }
   .out-draft .subj:focus, .out-draft textarea:focus { border-color: var(--grey-2); }
   .out-draft .subj .lbl { color: var(--grey-2); }
-  .out-draft textarea { width: 100%; min-height: 64px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px; outline: none; resize: vertical; color: var(--ink); font-size: 0.88rem; line-height: 1.5; background: #fcfcfd; }
+  .out-draft textarea { width: 100%; min-height: 64px; padding: 9px 11px; border: 1px solid var(--line); border-radius: var(--radius-control); outline: none; resize: vertical; color: var(--ink); font-size: 0.88rem; line-height: 1.5; background: var(--surface-subtle); }
   .out-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .out-actions .grow { flex: 1; }
   .btn.email { background: #fff; color: #c2410c; border-color: #f1d4c4; }
@@ -301,8 +386,8 @@
   .btn.wa:hover { background: #f0fdf4; }
   .btn.email[disabled], .btn.wa[disabled] { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
   .btn.skip-btn { background: transparent; border-color: transparent; color: var(--grey-2); }
-  .btn.skip-btn:hover { color: var(--grey); background: #f1f5f9; }
-  .btn.done { background: var(--ink); color: #fff; }
+  .btn.skip-btn:hover { color: var(--grey); background: var(--surface-subtle); }
+  .btn.done { background: var(--ink); color: var(--inverse-fg); }
   .btn.skip { background: none; border: none; color: var(--grey-2); font-size: 0.8rem; padding: 6px 8px; }
   .btn.skip:hover { color: var(--grey); }
 
@@ -339,7 +424,7 @@
   .dup-cluster { border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin-bottom: 12px; }
   .dup-clabel { font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--grey-2); margin-bottom: 8px; }
   .dup-row { display: flex; align-items: flex-start; gap: 9px; padding: 7px 8px; border-radius: 8px; cursor: pointer; }
-  .dup-row:hover { background: #f6f8fa; }
+  .dup-row:hover { background: var(--surface-subtle); }
   .dup-row input { margin-top: 3px; }
   .dup-info { min-width: 0; }
   .dup-name { font-weight: 600; font-size: 0.9rem; }
@@ -351,7 +436,7 @@
   }
   .field-row .ftype {
     font-size: 0.68rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
-    padding: 3px 8px; border-radius: 6px; background: #eef2f6; color: var(--grey); flex-shrink: 0; min-width: 70px; text-align: center;
+    padding: 3px 8px; border-radius: 6px; background: var(--chip-bg); color: var(--grey); flex-shrink: 0; min-width: 70px; text-align: center;
   }
   .field-row .flabel { font-weight: 600; color: var(--ink); }
   .field-row .fmeta { font-size: 0.76rem; color: var(--grey-2); }
@@ -386,7 +471,7 @@
   .form-group input[type=text], .form-group input[type=email], .form-group input[type=url],
   .form-group input[type=password],
   .form-group input[type=number], .form-group input[type=date], .form-group select, .form-group textarea {
-    width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px; background: var(--card);
+    width: 100%; padding: 7px 11px; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--card);
     color: var(--ink); outline: none; transition: border-color .12s;
   }
   .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--grey-2); }
@@ -404,9 +489,9 @@
   .toggle .tlabel { font-size: 0.82rem; color: var(--ink-2); }
 
   /* tags input */
-  .tags-input { display: flex; flex-wrap: wrap; gap: 6px; padding: 7px 8px; border: 1px solid var(--line); border-radius: 8px; }
+  .tags-input { display: flex; flex-wrap: wrap; gap: 6px; padding: 7px 8px; border: 1px solid var(--line); border-radius: var(--radius-control); }
   .tags-input:focus-within { border-color: var(--grey-2); }
-  .tags-input .tag { display: inline-flex; align-items: center; gap: 5px; background: #eef2f6; color: var(--ink-2); padding: 2px 4px 2px 9px; border-radius: 20px; font-size: 0.76rem; }
+  .tags-input .tag { display: inline-flex; align-items: center; gap: 5px; background: var(--chip-bg); color: var(--ink-2); padding: 2px 4px 2px 9px; border-radius: 20px; font-size: 0.76rem; }
   .tags-input .tag button { border: none; background: none; color: var(--grey); font-size: 0.9rem; line-height: 1; padding: 0 2px; }
   .tags-input input { border: none; outline: none; flex: 1; min-width: 80px; padding: 3px; }
 
@@ -420,13 +505,13 @@
   .ml-row.is-primary .ml-primary { display: inline-block; }
   .ml-row.is-primary .ml-star { display: none; }
   .ml-row .ml-star, .ml-row .ml-rm { border: none; background: none; cursor: pointer; color: var(--grey); font-size: 0.95rem; line-height: 1; padding: 2px 4px; border-radius: 6px; }
-  .ml-row .ml-star:hover, .ml-row .ml-rm:hover { background: #eef2f6; color: var(--ink-2); }
+  .ml-row .ml-star:hover, .ml-row .ml-rm:hover { background: var(--chip-bg); color: var(--ink-2); }
   .ml-add { align-self: flex-start; border: 1px dashed var(--line); background: none; color: var(--grey); font-size: 0.8rem; padding: 5px 10px; border-radius: 7px; cursor: pointer; }
   .ml-add:hover { border-color: var(--grey-2); color: var(--ink-2); }
 
   /* date list (repeatable dates) */
   .datelist .dl-rows { display: flex; flex-direction: column; gap: 7px; margin-bottom: 8px; }
-  .dl-row { display: flex; flex-direction: column; gap: 6px; padding: 9px; border: 1px solid var(--line-soft); border-radius: 9px; background: #fcfcfd; }
+  .dl-row { display: flex; flex-direction: column; gap: 6px; padding: 9px; border: 1px solid var(--line-soft); border-radius: 9px; background: var(--surface-subtle); }
   .dl-row input, .dl-row select { padding: 7px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--card); color: var(--ink); outline: none; min-width: 0; }
   .dl-row input:focus, .dl-row select:focus { border-color: var(--grey-2); }
   .dl-r1 { display: flex; gap: 6px; align-items: center; }
@@ -451,7 +536,7 @@
   .act-add { display: grid; grid-template-columns: 116px 1fr auto; gap: 6px; margin-bottom: 14px; align-items: center; }
   .act-add select, .act-add input[type=text] { padding: 7px 9px; border: 1px solid var(--line); border-radius: 7px; outline: none; font-size: 0.83rem; background: var(--card); color: var(--ink); width: 100%; }
   .act-add select:focus, .act-add input:focus { border-color: var(--grey-2); }
-  .act-add .act-add-btn { padding: 7px 12px; border-radius: 7px; border: 1px solid var(--line); background: var(--ink); color: #fff; font-size: 0.82rem; font-weight: 600; white-space: nowrap; }
+  .act-add .act-add-btn { padding: 7px 12px; border-radius: 7px; border: 1px solid var(--line); background: var(--ink); color: var(--inverse-fg); font-size: 0.82rem; font-weight: 600; white-space: nowrap; }
   .act-add .act-add-btn:hover { background:#000; }
   .act-add-date { grid-column: 1 / -1; }
   .act-add-date input[type=date] { padding: 6px 9px; border: 1px solid var(--line); border-radius: 7px; outline: none; font-size: 0.8rem; color: var(--grey); background: var(--card); }
@@ -459,7 +544,7 @@
   .act-empty { font-size: 0.82rem; color: var(--grey-2); padding: 4px 0 8px; }
   .act-row { display: flex; gap: 11px; padding: 9px 0; border-bottom: 1px solid var(--line-soft); position: relative; }
   .act-row:last-child { border-bottom: none; }
-  .act-row .act-ico { width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%; background: #eef2f6; display: flex; align-items: center; justify-content: center; font-size: 0.82rem; }
+  .act-row .act-ico { width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%; background: var(--chip-bg); display: flex; align-items: center; justify-content: center; font-size: 0.82rem; }
   .act-row .act-body { flex: 1; min-width: 0; }
   .act-row .act-primary { font-size: 0.86rem; color: var(--ink); }
   .act-row .act-meta { font-size: 0.74rem; color: var(--grey-2); margin-top: 1px; }
@@ -500,7 +585,7 @@
 
   .toast {
     position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
-    background: var(--ink); color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 0.85rem;
+    background: var(--ink); color: var(--inverse-fg); padding: 10px 18px; border-radius: 8px; font-size: 0.85rem;
     box-shadow: var(--shadow-md); opacity: 0; pointer-events: none; transition: all .2s; z-index: 80;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -520,11 +605,11 @@
   .ask-eg { display: inline-block; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 5px 11px; margin: 4px 6px 0 0; font-size: 0.82rem; color: var(--ink-2); cursor: pointer; }
   .ask-eg:hover { border-color: var(--accent); color: var(--accent-ink); }
   .ask-msg { max-width: 88%; }
-  .ask-msg.user { align-self: flex-end; background: var(--ink); color: #fff; border-radius: 14px 14px 4px 14px; padding: 9px 14px; font-size: 0.9rem; }
+  .ask-msg.user { align-self: flex-end; background: var(--ink); color: var(--inverse-fg); border-radius: 14px 14px 4px 14px; padding: 9px 14px; font-size: 0.9rem; }
   .ask-msg.bot { align-self: flex-start; background: var(--card); border: 1px solid var(--line); border-radius: 14px 14px 14px 4px; padding: 12px 14px; box-shadow: var(--shadow-sm); }
   .ask-msg.bot .ask-title { font-weight: 600; color: var(--ink); margin-bottom: 8px; }
   .ask-results { display: flex; flex-wrap: wrap; gap: 6px; }
-  .ask-chip { display: inline-flex; align-items: center; gap: 7px; background: #f1f5f9; border-radius: 20px; padding: 3px 10px 3px 3px; font-size: 0.82rem; color: var(--ink-2); cursor: pointer; }
+  .ask-chip { display: inline-flex; align-items: center; gap: 7px; background: var(--surface-subtle); border-radius: 20px; padding: 3px 10px 3px 3px; font-size: 0.82rem; color: var(--ink-2); cursor: pointer; }
   .ask-chip:hover { background: #e7f9ea; color: var(--accent-ink); }
   .ask-chip .avatar { width: 22px; height: 22px; font-size: 0.62rem; }
   .ask-actions { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
@@ -566,6 +651,7 @@
     <div class="spacer"></div>
     <button class="ai-badge hide" id="aiBadge" title="Local AI is active — click to manage"></button>
     <button class="acct-btn" id="btnSb" title="Sign in"><span class="acct-ava hide" id="acctAva"></span><span id="acctLabel">Sign in</span><span class="sync-dot hide" id="sbDot"></span></button>
+    <button class="iconbtn" id="btnTheme" title="Toggle dark mode">🌙</button>
     <button class="iconbtn" id="btnExport" title="Download a local copy (JSON)">⤓</button>
     <button class="iconbtn" id="btnImport" title="Restore from backup (JSON)">⤒</button>
     <input type="file" id="fileImport" accept="application/json" class="hide">
@@ -841,10 +927,10 @@
       <p id="csvSubhead">Export from Google Contacts, Apple Contacts, or any spreadsheet, then drop the file here.</p>
     </div>
     <div class="modal-body">
-      <input type="file" id="csvFile" accept=".csv,text/csv" class="hide">
+      <input type="file" id="csvFile" accept=".csv,text/csv,.vcf,text/vcard,text/x-vcard" class="hide">
       <div id="csvDrop" class="csv-drop">
         <div class="big">↧</div>
-        <p>Click to choose a <strong>.csv</strong> file</p>
+        <p>Click to choose a <strong>.csv</strong> or <strong>.vcf</strong> file</p>
       </div>
       <div id="csvMapping" class="hide">
         <div class="csv-opts">
@@ -3266,6 +3352,47 @@ function parseCSV(text){
   return rows.filter(r => r.some(c => (c||"").trim() !== ""));
 }
 
+// vCard (.vcf) — iPhone/Android exports, contacts shared from WhatsApp. → {headers, rows} so the same mapping UI applies.
+function vUnescape(s){ return (s||"").replace(/\\n/gi,"\n").replace(/\\,/g,",").replace(/\\;/g,";").replace(/\\\\/g,"\\"); }
+function parseVCards(text){
+  const blocks = text.split(/BEGIN:VCARD/i).slice(1).map(c => c.split(/END:VCARD/i)[0]);
+  const recs = blocks.map(block=>{
+    const unfolded = block.replace(/\r?\n[ \t]/g, "");          // RFC6350 line unfolding
+    const rec = { name:"", emails:[], phones:[], org:"", bday:"", note:"", cats:[] };
+    let fn = "", n = "";
+    unfolded.split(/\r?\n/).forEach(line=>{
+      const idx = line.indexOf(":"); if(idx < 0) return;
+      const prop = line.slice(0, idx).split(/[;:]/)[0].toUpperCase().replace(/^ITEM\d+\./, "");
+      const val = vUnescape(line.slice(idx + 1)).trim();
+      if(!val && prop!=="N") return;
+      if(prop === "FN") fn = val;
+      else if(prop === "N" && !n){ const p = val.split(";"); n = [p[1], p[0]].filter(Boolean).join(" ").trim(); }
+      else if(prop === "EMAIL") rec.emails.push(val);
+      else if(prop === "TEL") rec.phones.push(val);
+      else if(prop === "ORG" && !rec.org) rec.org = val.split(";")[0].trim();
+      else if(prop === "BDAY") rec.bday = val;
+      else if(prop === "NOTE") rec.note = val;
+      else if(prop === "CATEGORIES") val.split(",").map(s=>s.trim()).filter(Boolean).forEach(c=>rec.cats.push(c));
+    });
+    rec.name = fn || n;
+    return rec;
+  }).filter(r => r.name || r.emails.length || r.phones.length);
+  const maxE = Math.max(1, ...recs.map(r=>r.emails.length).concat(0));
+  const maxP = Math.max(1, ...recs.map(r=>r.phones.length).concat(0));
+  const headers = ["Name"];
+  for(let i=0;i<maxE;i++) headers.push("Email "+(i+1));
+  for(let i=0;i<maxP;i++) headers.push("Phone "+(i+1));
+  headers.push("Company", "Birthday", "Notes", "Labels");
+  const rows = recs.map(r=>{
+    const row = [r.name];
+    for(let i=0;i<maxE;i++) row.push(r.emails[i] || "");
+    for(let i=0;i<maxP;i++) row.push(r.phones[i] || "");
+    row.push(r.org, r.bday, r.note, r.cats.join(", "));
+    return row;
+  });
+  return { headers, rows };
+}
+
 function importTargets(){
   const base = [
     { v:"ignore", label:"— Ignore —" },
@@ -3274,6 +3401,7 @@ function importTargets(){
     { v:"last",   label:"Last name" },
     { v:"email",  label:"Email" },
     { v:"phone",  label:"Phone" },
+    { v:"company", label:"Company" },
     { v:"labels", label:"Labels" },
     { v:"birthday", label:"Birthday (date)" },
     { v:"notes",  label:"Notes" },
@@ -3286,13 +3414,19 @@ function importTargets(){
 
 function guessTarget(header){
   const h = (header||"").toLowerCase().trim();
+  if(!h) return "ignore";
+  // Google Contacts sub-attribute descriptor columns ("E-mail 1 - Type", "Phone 1 - Label") → skip
+  if(/ - (type|label)$/.test(h)) return "ignore";
+  // Google "E-mail N - Value" / "Phone N - Value" (and plain headers)
+  if(/e-?mail/.test(h)) return "email";
+  if(/phone|mobile|^tel\b/.test(h)) return "phone";
   if(/(first|given).*name|^first$|^given$/.test(h)) return "first";
   if(/(last|family|sur).*name|^last$|^surname$/.test(h)) return "last";
-  if(/^(full ?name|display ?name|name)$/.test(h) || h==="contact") return "name";
-  if(/e-?mail/.test(h)) return "email";
-  if(/phone|mobile|^tel/.test(h)) return "phone";
-  if(/birth|dob/.test(h)) return "birthday";
-  if(/label|tag|group|categor/.test(h)) return "labels";
+  if(/^(full ?name|display ?name|file as|name)$/.test(h) || h==="contact") return "name";
+  if(/organi[sz]ation.*name|^organi[sz]ation$|^company$|employer/.test(h)) return "company";
+  if(/organi[sz]ation.*(title|department)|^title$|job ?title/.test(h)) return "ignore"; // Tribe has no title field
+  if(/birth|dob|bday/.test(h)) return "birthday";
+  if(/^(labels?|group ?membership|tags?|categor)/.test(h)) return "labels";
   if(/note|memo|comment/.test(h)) return "notes";
   // exact match to a custom field label
   const f = db.fields.find(x=> !x.system && (x.label||"").toLowerCase()===h);
@@ -3322,7 +3456,7 @@ function openCsv(){
   document.getElementById("csvMapping").classList.add("hide");
   document.getElementById("btnDoImport").classList.add("hide");
   document.getElementById("csvCount").textContent = "";
-  document.getElementById("csvSubhead").textContent = "Export from Google Contacts, Apple Contacts, or any spreadsheet, then drop the file here.";
+  document.getElementById("csvSubhead").textContent = "Drop a Google Contacts CSV, an Apple/Android/WhatsApp vCard (.vcf), or any spreadsheet — columns auto-map.";
   document.getElementById("csvModal").classList.add("open");
 }
 function closeCsv(){ document.getElementById("csvModal").classList.remove("open"); csvState = null; }
@@ -3330,12 +3464,21 @@ function closeCsv(){ document.getElementById("csvModal").classList.remove("open"
 function handleCsvFile(file){
   const reader = new FileReader();
   reader.onload = e=>{
-    const rows = parseCSV(e.target.result);
-    if(rows.length < 2){ toast("That CSV has no rows"); return; }
-    const headers = rows[0];
+    const text = e.target.result;
+    const isVcf = /\.vcf$/i.test(file.name || "") || /BEGIN:VCARD/i.test(text.slice(0, 200));
+    let headers, dataRows;
+    if(isVcf){
+      const p = parseVCards(text);
+      if(!p.rows.length){ toast("No contacts found in that vCard"); return; }
+      headers = p.headers; dataRows = p.rows;
+    } else {
+      const rows = parseCSV(text);
+      if(rows.length < 2){ toast("That file has no rows"); return; }
+      headers = rows[0]; dataRows = rows.slice(1);
+    }
     const mapping = {};
     headers.forEach((h,i)=> mapping[i] = guessTarget(h));
-    csvState = { headers, rows: rows.slice(1), mapping, dateOrder:"dmy", skipDupes:true };
+    csvState = { headers, rows: dataRows, mapping, dateOrder:"dmy", skipDupes:true };
     renderCsvMapping();
   };
   reader.readAsText(file);
@@ -3383,9 +3526,12 @@ function buildImportRow(r){
   const allPhones = [...new Set(getAll("phone").map(p=>p.trim()).filter(Boolean))];
   if(allPhones.length) data.phone = allPhones.map((p,i)=>({ num:p, wa:i===0 }));  // first = WhatsApp by default
   const notes = get("notes"); if(notes) data.notes = notes;
+  const company = get("company"); if(company) data.company = company;   // resolved to a Company record in doImport
 
   const labels = [];
-  getAll("labels").forEach(v => v.split(/ ::: |[;,]/).map(s=>s.trim()).filter(Boolean).forEach(l=>{ if(!labels.includes(l)) labels.push(l); }));
+  const JUNK_LABEL = /^(\*?\s*mycontacts|starred in android|\* )$/i;
+  getAll("labels").forEach(v => v.split(/ ::: |[;,]/).map(s=>s.replace(/^\*\s*/,"").trim()).filter(Boolean)
+    .forEach(l=>{ if(!JUNK_LABEL.test(l) && l!=="myContacts" && !labels.includes(l)) labels.push(l); }));
   if(labels.length) data.labels = labels;
 
   // custom fields
@@ -3616,6 +3762,19 @@ sbInit();   // silently reconnect cloud sync if set up on this device
 if("serviceWorker" in navigator && location.protocol.startsWith("http") && !location.pathname.endsWith("tribe.html")){
   window.addEventListener("load", ()=> navigator.serviceWorker.register("service-worker.js").catch(()=>{}));
 }
+
+// ── Dark-mode toggle ──
+(function(){
+  var btn = document.getElementById('btnTheme');
+  if(!btn) return;
+  function sync(){ btn.textContent = document.documentElement.classList.contains('dark') ? '☀️' : '🌙'; }
+  sync();
+  btn.addEventListener('click', function(){
+    var dark = document.documentElement.classList.toggle('dark');
+    try { localStorage.setItem('tribe-theme', dark ? 'dark' : 'light'); } catch(e){}
+    sync();
+  });
+})();
 </script>
 </body>
 </html>
