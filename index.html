@@ -2969,6 +2969,8 @@ function mergeCompany(){
 
 /* ───────────────────────── Merge contacts / find duplicates ───────────────────────── */
 function phoneDigits(n){ return (n||"").replace(/[^0-9]/g,""); }
+// match key: last 10 digits, so "+91 90000 12345", "09000012345" and "9000012345" all match
+function phoneKey(n){ const d = phoneDigits(n); return d.length >= 10 ? d.slice(-10) : d; }
 
 // Fold otherIds into keeperId: union emails/phones/labels/dates, fill blanks, concat notes & logs.
 function mergeMembers(keeperId, otherIds){
@@ -2982,8 +2984,8 @@ function mergeMembers(keeperId, otherIds){
   keeper.data.email = emails;
 
   // phones — union by digits, OR the WhatsApp flag
-  const phones = [...phonesOf(keeper)]; const byDig = new Map(phones.map(p=>[phoneDigits(p.num), p]));
-  others.forEach(o=> phonesOf(o).forEach(p=>{ const k=phoneDigits(p.num); if(byDig.has(k)){ if(p.wa) byDig.get(k).wa = true; } else { phones.push(p); byDig.set(k,p); } }));
+  const phones = [...phonesOf(keeper)]; const byDig = new Map(phones.map(p=>[phoneKey(p.num), p]));
+  others.forEach(o=> phonesOf(o).forEach(p=>{ const k=phoneKey(p.num); if(byDig.has(k)){ if(p.wa) byDig.get(k).wa = true; } else { phones.push(p); byDig.set(k,p); } }));
   keeper.data.phone = phones;
 
   // labels — union
@@ -3037,7 +3039,7 @@ function findDuplicateClusters(){
   const addKey = (m,key)=>{ if(!key) return; if(keyOwner[key]) union(m.id, keyOwner[key]); else keyOwner[key]=m.id; };
   db.members.forEach(m=>{
     emailsOf(m).forEach(e=> addKey(m, "e:"+e.toLowerCase()));
-    phonesOf(m).forEach(p=>{ const d=phoneDigits(p.num); if(d.length>=7) addKey(m, "p:"+d); });
+    phonesOf(m).forEach(p=>{ const d=phoneKey(p.num); if(d.length>=7) addKey(m, "p:"+d); });
     const nm = memberName(m).toLowerCase().replace(/\s+/g," ").trim();
     if(nm && nm!=="untitled") addKey(m, "n:"+nm);
   });
