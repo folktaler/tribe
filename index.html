@@ -11,7 +11,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script>(function(){try{var t=localStorage.getItem('tribe-theme');if(t==='dark'||(!t&&window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.classList.add('dark');}catch(e){}})();</script>
 <style>
   /* ──────────────────────────────────────────────────────────────────────
      Ghost design tokens — lifted verbatim from TryGhost/Ghost (MIT):
@@ -75,46 +74,6 @@
     --chip-bg:        var(--color-grey-100);   /* neutral pill/chip background */
     --inverse-fg:     #fff;                    /* text on a solid --ink surface */
   }
-
-  /* ── Dark mode — Ghost dark roles (toggle adds .dark on <html>) ── */
-  .dark {
-    --bg:            var(--color-black);
-    --surface-panel: var(--color-grey-950);    /* cards lift off pure black */
-    --surface-subtle: var(--color-grey-900);
-    --chip-bg:        var(--color-grey-900);
-    --ink:        var(--color-grey-200);
-    --ink-2:      var(--color-grey-100);
-    --grey:       var(--color-grey-400);
-    --grey-2:     var(--color-grey-500);
-    --line:       var(--color-grey-900);
-    --line-soft:  var(--color-grey-900);
-    --border:     var(--color-grey-900);
-    --border-strong: var(--color-grey-700);
-    --text-primary:   var(--color-grey-200);
-    --text-secondary: var(--color-grey-400);
-    --text-tertiary:  var(--color-grey-500);
-    --inverse-fg:     var(--color-black);      /* dark: --ink is light, so text on it goes dark */
-  }
-  /* Dark fixes for the few colour-pastel elements so they adapt instead of glaring */
-  .dark .pill.accent,
-  .dark .out-card.today .when-pill,
-  .dark .ix-head .reason,
-  .dark .ml-row .ml-primary { background: color-mix(in oklch, var(--accent) 22%, transparent); color: var(--color-green-400); }
-  .dark .out-context,
-  .dark .type-opt.sel,
-  .dark .ai-badge,
-  .dark #btnInboxAI.ai-on { background: color-mix(in oklch, var(--accent) 16%, transparent); border-color: color-mix(in oklch, var(--accent) 38%, transparent); color: var(--color-green-400); }
-  .dark .backup-banner,
-  .dark .gh-warn { background: color-mix(in oklch, var(--color-yellow-500) 15%, transparent); border-color: color-mix(in oklch, var(--color-yellow-500) 38%, transparent); color: var(--color-yellow-400); }
-  .dark .backup-banner .bb-msg,
-  .dark .backup-banner .bb-x { color: var(--color-yellow-400); }
-  .dark .btn.email,
-  .dark .btn.wa { background: var(--surface-panel); }
-  .dark .btn.ai-draft { background: color-mix(in oklch, var(--color-purple-500) 20%, transparent); border-color: color-mix(in oklch, var(--color-purple-500) 38%, transparent); color: var(--color-purple-400); }
-  .dark .btn.ai-draft:hover { background: color-mix(in oklch, var(--color-purple-500) 30%, transparent); }
-  /* primary-button hover should brighten (not go to #000) when primary is light in dark */
-  .dark .btn:not(.ghost):not(.danger):not(.email):not(.wa):not(.skip-btn):not(.skip):not(.ai-draft):hover,
-  .dark .act-add .act-add-btn:hover { background: var(--color-grey-100); }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -651,7 +610,6 @@
     <div class="spacer"></div>
     <button class="ai-badge hide" id="aiBadge" title="Local AI is active — click to manage"></button>
     <button class="acct-btn" id="btnSb" title="Sign in"><span class="acct-ava hide" id="acctAva"></span><span id="acctLabel">Sign in</span><span class="sync-dot hide" id="sbDot"></span></button>
-    <button class="iconbtn" id="btnTheme" title="Toggle dark mode">🌙</button>
     <button class="iconbtn" id="btnExport" title="Download a local copy (JSON)">⤓</button>
     <button class="iconbtn" id="btnImport" title="Restore from backup (JSON)">⤒</button>
     <input type="file" id="fileImport" accept="application/json" class="hide">
@@ -3405,6 +3363,7 @@ function importTargets(){
     { v:"phone",  label:"Phone" },
     { v:"company", label:"Company" },
     { v:"labels", label:"Labels" },
+    { v:"lastcontact", label:"Last contacted (date)" },
     { v:"birthday", label:"Birthday (date)" },
     { v:"notes",  label:"Notes" },
   ];
@@ -3427,6 +3386,7 @@ function guessTarget(header){
   if(/^(full ?name|display ?name|file as|name)$/.test(h) || h==="contact") return "name";
   if(/organi[sz]ation.*name|^organi[sz]ation$|^company$|employer/.test(h)) return "company";
   if(/organi[sz]ation.*(title|department)|^title$|job ?title/.test(h)) return "ignore"; // Tribe has no title field
+  if(/last (contact|emailed|met|interaction|seen)|last[_-]?contact/.test(h)) return "lastcontact";
   if(/birth|dob|bday/.test(h)) return "birthday";
   if(/^(labels?|group ?membership|tags?|categor)/.test(h)) return "labels";
   if(/note|memo|comment/.test(h)) return "notes";
@@ -3547,7 +3507,11 @@ function buildImportRow(r){
     if(iso) data.dates = [{ type:"Birthday", date:iso, recurrence:"yearly" }];
     else dateUnparsed = true;
   }
-  return { data, email: email.toLowerCase(), dateUnparsed };
+  // last contacted → seed an interaction-log entry so "gone quiet" works from day one
+  let lastContact = null;
+  const lcRaw = get("lastcontact");
+  if(lcRaw){ const iso = parseImportDate(lcRaw, csvState.dateOrder); if(iso) lastContact = iso; }
+  return { data, email: email.toLowerCase(), dateUnparsed, lastContact };
 }
 
 function previewImport(){
@@ -3590,7 +3554,9 @@ function doImport(){
     if(built.email && (existingEmails.has(built.email) || seen.has(built.email)) && csvState.skipDupes){ dupes++; return; }
     if(built.email) seen.add(built.email);
     if(built.data.company) built.data.company = findOrCreateCompany(built.data.company);   // name → linked company
-    db.members.push({ id:uid(), createdAt:today, data:built.data });
+    const member = { id:uid(), createdAt: built.lastContact || today, data:built.data };
+    if(built.lastContact){ member.log = [{ date: built.lastContact, channel:"contact", note:"From import" }]; member.snoozed = {}; member.snoozedUntil = {}; }
+    db.members.push(member);
     added++;
   });
   save(); closeCsv(); renderAll();
@@ -3764,19 +3730,6 @@ sbInit();   // silently reconnect cloud sync if set up on this device
 if("serviceWorker" in navigator && location.protocol.startsWith("http") && !location.pathname.endsWith("tribe.html")){
   window.addEventListener("load", ()=> navigator.serviceWorker.register("service-worker.js").catch(()=>{}));
 }
-
-// ── Dark-mode toggle ──
-(function(){
-  var btn = document.getElementById('btnTheme');
-  if(!btn) return;
-  function sync(){ btn.textContent = document.documentElement.classList.contains('dark') ? '☀️' : '🌙'; }
-  sync();
-  btn.addEventListener('click', function(){
-    var dark = document.documentElement.classList.toggle('dark');
-    try { localStorage.setItem('tribe-theme', dark ? 'dark' : 'light'); } catch(e){}
-    sync();
-  });
-})();
 </script>
 </body>
 </html>
