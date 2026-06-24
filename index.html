@@ -3153,7 +3153,9 @@ function updateSbUI(){
 async function getSupabaseClient(){
   if(sbClient) return sbClient;
   const m = await import("https://esm.sh/@supabase/supabase-js@2");
-  sbClient = m.createClient(SB_URL, SB_ANON_KEY, { auth:{ persistSession:true, storageKey:"tribe_sb_session", autoRefreshToken:true, detectSessionInUrl:true } });
+  // lock passthrough: disable supabase's navigator.locks auth lock, which can DEADLOCK a request
+  // when the same origin is open twice (installed PWA + a browser tab) — left it spinning "Syncing…".
+  sbClient = m.createClient(SB_URL, SB_ANON_KEY, { auth:{ persistSession:true, storageKey:"tribe_sb_session", autoRefreshToken:true, detectSessionInUrl:true, lock: (_name, _acquireTimeout, fn) => fn() } });
   // keeps UI in sync with auth (restored session on load, clicked magic link, token refresh, sign-out elsewhere)
   sbClient.auth.onAuthStateChange(async (_e, session)=>{
     if(session && session.user){
@@ -3277,11 +3279,17 @@ function flushSync(){
 async function syncNow(){
   if(!sbOn()){ setSbStatus("Sign in first to sync."); return; }
   if(!navigator.onLine){ setSbDot("pending"); return; }
-  setSbDot("syncing"); setSbStatus("Syncing to the cloud…");
+  const mb = (JSON.stringify(db).length/1048576).toFixed(1);
+  setSbDot("syncing"); setSbStatus(`Syncing ${mb} MB to the cloud…`);
+  const t0 = performance.now();
   try {
-    await sbPush();
+    await Promise.race([
+      sbPush(),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error("timed out (25s). The request hung — close any OTHER open Tribe tab/window, then try again.")), 25000))
+    ]);
+    const secs = ((performance.now()-t0)/1000).toFixed(1);
     setSbDot("ok");
-    setSbStatus(`Signed in as ${sbUser.email} · ✓ Synced just now.`);
+    setSbStatus(`Signed in as ${sbUser.email} · ✓ Synced ${mb} MB in ${secs}s.`);
   } catch(e){
     setSbDot("fail");
     setSbStatus("⚠ Sync failed: " + sbErrText(e));
