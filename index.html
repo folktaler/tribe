@@ -12,67 +12,66 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  /* ──────────────────────────────────────────────────────────────────────
-     Ghost design tokens — lifted verbatim from TryGhost/Ghost (MIT):
-       apps/shade/tailwind.theme.css (primitives) + theme-variables.css (roles).
-     Tribe's local vars below now resolve to these, so the whole app inherits
-     Ghost's palette, shadows and radii. See ~/toolkit/theme.css for the full
-     shared theme. Pilot: light only (dark toggle is a follow-up).
-     ────────────────────────────────────────────────────────────────────── */
+  /* ==== GHOST-TOKENS (managed by theme-sync — do not edit between markers) ==== */
   :root {
-    /* Ghost colour primitives (oklch, verbatim) */
+    /* Ghost colour primitives — lifted verbatim from TryGhost/Ghost (MIT),
+       apps/shade/tailwind.theme.css. Managed by theme-sync; see UPSTREAM.md. */
     --color-white:    oklch(100% 0 0);
     --color-black:    oklch(20.38% 0.0067 258.4);
     --color-grey-50:  oklch(98.54% 0.0013 286.4);
     --color-grey-100: oklch(96.97% 0.0017 247.8);
     --color-grey-200: oklch(94.74% 0.0042 236.5);
+    --color-grey-300: oklch(90.78% 0.0070 247.9);
     --color-grey-400: oklch(86.68% 0.0095 242.9);
     --color-grey-500: oklch(77.55% 0.0174 250.9);
+    --color-grey-600: oklch(70.33% 0.0223 248.1);
     --color-grey-700: oklch(62.98% 0.0286 248.3);
+    --color-grey-800: oklch(52.97% 0.0232 250.6);
     --color-grey-900: oklch(36.77% 0.0153 248.2);
     --color-grey-950: oklch(25.95% 0.0063 258.4);
     --color-green-400: oklch(79.04% 0.1936 145.5);
-    --color-green-500: oklch(74.81% 0.2213 144.4);  /* Ghost membership green */
+    --color-green-500: oklch(74.81% 0.2213 144.4);
     --color-green-700: oklch(55.58% 0.1604 144.5);
     --color-blue-500:  oklch(74.03% 0.1559 235.9);
+    --color-red-500:   oklch(61.27% 0.2462 26.4);
     --color-yellow-400: oklch(84.87% 0.1508 81.3);
     --color-yellow-500: oklch(82.04% 0.1655 77.3);
     --color-purple-400: oklch(64.94% 0.2182 298.5);
     --color-purple-500: oklch(58.34% 0.2584 295.5);
-    --color-red-500:   oklch(61.27% 0.2462 26.4);
-
-    /* Ghost semantic roles (light) */
+    /* Semantic roles (light) */
     --text-primary:   var(--color-black);
     --text-secondary: var(--color-grey-700);
     --text-tertiary:  var(--color-grey-400);
     --border:         var(--color-grey-200);
     --border-strong:  var(--color-grey-500);
     --surface-panel:  var(--color-white);
-
-    /* Ghost shadows + easing (verbatim) */
+    --bg:             var(--color-grey-50);
+    --surface-subtle: var(--color-grey-50);
+    --chip-bg:        var(--color-grey-100);
+    --inverse-fg:     #fff;
+    /* Geometry / shadow / motion / type (px — apps run at a 16px root) */
+    --radius: 8px;
+    --radius-control: 6px;
     --shadow-sm: 0 0 1px rgba(0,0,0,.12), 0 1px 6px rgba(0,0,0,0.03), 0 8px 10px -8px rgba(0,0,0,.1);
     --shadow-md: 0 0 1px rgba(0,0,0,0.12), 0 1px 6px rgba(0,0,0,0.03), 0 8px 10px -8px rgba(0,0,0,0.05), 0px 24px 37px -21px rgba(0,0,0,0.05);
     --shadow-lg: 0 0 7px rgba(0,0,0,0.08), 0 2.1px 2.2px -5px rgba(0,0,0,0.011), 0 5.1px 5.3px -5px rgba(0,0,0,0.016), 0 9.5px 10px -5px rgba(0,0,0,0.02), 0 17px 17.9px -5px rgba(0,0,0,0.024), 0 31.8px 33.4px -5px rgba(0,0,0,0.029), 0 76px 80px -5px rgba(0,0,0,0.04);
     --ease-standard: cubic-bezier(0.2, 0, 0, 1);
-
-    /* ── Tribe's own aliases — now pointed at Ghost ── */
     --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    --ink:       var(--text-primary);   /* primary text   */
-    --ink-2:     var(--color-grey-900);  /* strong secondary */
-    --grey:      var(--text-secondary);  /* secondary text  */
-    --grey-2:    var(--text-tertiary);   /* tertiary        */
-    --line:      var(--border);          /* borders         */
-    --line-soft: var(--color-grey-100);
-    --bg:        var(--color-grey-50);   /* page bg         */
-    --card:      var(--surface-panel);
-    --accent:    var(--color-green-500);
+  }
+  /* ==== /GHOST-TOKENS ==== */
+
+  /* Tribe aliases → Ghost roles (app-specific; outside the managed block) */
+  :root {
+    --ink:        var(--text-primary);
+    --ink-2:      var(--color-grey-900);
+    --grey:       var(--text-secondary);
+    --grey-2:     var(--text-tertiary);
+    --line:       var(--border);
+    --line-soft:  var(--color-grey-100);
+    --card:       var(--surface-panel);
+    --accent:     var(--color-green-500);
     --accent-ink: var(--color-green-700);
-    --blue:      var(--color-blue-500);
-    --radius: 8px;            /* Ghost radius-surface */
-    --radius-control: 6px;    /* Ghost radius-control */
-    --surface-subtle: var(--color-grey-50);   /* recessed/raised neutral fills */
-    --chip-bg:        var(--color-grey-100);   /* neutral pill/chip background */
-    --inverse-fg:     #fff;                    /* text on a solid --ink surface */
+    --blue:       var(--color-blue-500);
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -927,6 +926,7 @@
     <div class="modal-foot">
       <button class="btn danger sm hide" id="btnSbSignout" style="margin-right:auto">Sign out</button>
       <button class="btn ghost" id="btnSbClose">Close</button>
+      <button class="btn ghost hide" id="btnSbSyncNow">Sync now</button>
       <button class="btn" id="btnSbSendCode">Email me a code</button>
       <button class="btn hide" id="btnSbVerify">Sign in</button>
     </div>
@@ -3113,10 +3113,22 @@ let sbClient = null, sbUser = null, sbState = "off", sbSyncTimer = null, lastSbS
 function sbOn(){ return sbState==="ready" && sbClient && sbUser; }
 
 function setSbStatus(t){ const el=document.getElementById("sbStatus"); if(el) el.textContent=t; }
+let sbDotState = "idle";
+function sbStateLine(){
+  return sbDotState==="ok" ? "✓ Synced to the cloud — your data is safe."
+    : sbDotState==="syncing" ? "Syncing to the cloud…"
+    : sbDotState==="fail" ? "⚠ Sync failed — tap Sync now to retry."
+    : sbDotState==="pending" ? "Offline — saved on this device, will sync when you reconnect."
+    : "Signed in.";
+}
 function setSbDot(s){
+  sbDotState = s;
   const d=document.getElementById("sbDot"); if(d) d.className = "sync-dot " + (s==="idle"?"hide":s);
   const b=document.getElementById("btnSb");
   if(b) b.title = s==="ok" ? "Cloud sync · synced ✓" : s==="syncing" ? "Cloud syncing…" : s==="fail" ? "Cloud sync failed — click to check" : s==="pending" ? "Offline — saved locally, will sync when you reconnect" : "Cloud sync";
+  // if the account panel is open & signed in, keep its text in sync (no hover needed — works on PWA/touch)
+  const modal=document.getElementById("sbModal");
+  if(modal && modal.classList.contains("open") && sbOn()) setSbStatus(sbStateLine());
 }
 function updateSbUI(){
   document.getElementById("btnSbSignout").classList.toggle("hide", !sbOn());
@@ -3261,12 +3273,27 @@ function flushSync(){
   } else { sbInit(); }
 }
 
+// manual sync — force a push and report the outcome in the panel (works on PWA/touch, no hover needed)
+async function syncNow(){
+  if(!sbOn()){ setSbStatus("Sign in first to sync."); return; }
+  if(!navigator.onLine){ setSbDot("pending"); return; }
+  setSbDot("syncing"); setSbStatus("Syncing to the cloud…");
+  try {
+    await sbPush();
+    setSbDot("ok");
+    setSbStatus(`Signed in as ${sbUser.email} · ✓ Synced just now.`);
+  } catch(e){
+    setSbDot("fail");
+    setSbStatus("⚠ Sync failed: " + sbErrText(e));
+  }
+}
+
 function openSb(){
   const title = document.getElementById("sbTitle");
   const body = document.getElementById("sbModal").querySelector(".modal-body");
   if(sbOn()){
     if(title) title.textContent = "Your account";
-    setSbStatus(`Signed in as ${sbUser.email} · your data is syncing to the cloud.`);
+    setSbStatus(`Signed in as ${sbUser.email} · ${sbStateLine()}`);
     if(body) body.style.display = "none";   // signed in → just show status + Sign out
   } else {
     if(title) title.textContent = "Sign in";
@@ -3275,6 +3302,7 @@ function openSb(){
   }
   const signedIn = sbOn();
   document.getElementById("btnSbSignout").classList.toggle("hide", !signedIn);
+  document.getElementById("btnSbSyncNow").classList.toggle("hide", !signedIn);   // manual sync (handy on PWA/touch — no hover)
   document.getElementById("btnSbSendCode").classList.toggle("hide", signedIn);   // no "Email me a code" once signed in
   document.getElementById("btnSbVerify").classList.add("hide");                  // only appears after a code is sent
   document.getElementById("sbCodeRow").classList.add("hide");                    // reset the code field
@@ -3660,6 +3688,7 @@ document.getElementById("btnSb").onclick = openSb;
 document.getElementById("btnSbSendCode").onclick = sbSendCode;
 document.getElementById("btnSbVerify").onclick = sbVerifyCode;
 document.getElementById("btnSbClose").onclick = closeSb;
+document.getElementById("btnSbSyncNow").onclick = syncNow;
 document.getElementById("btnSbSignout").onclick = sbSignOut;
 document.getElementById("sbModal").onclick = e=>{ if(e.target.id==="sbModal") closeSb(); };
 document.getElementById("sbCode").addEventListener("keydown", e=>{ if(e.key==="Enter") sbVerifyCode(); });
