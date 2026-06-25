@@ -168,9 +168,14 @@
   }
 
   .btn {
+    display: inline-flex; align-items: center; gap: 6px;
     padding: 7px 16px; border-radius: var(--radius-control); border: 1px solid transparent; font-size: 0.88rem; font-weight: 600;
     background: var(--ink); color: var(--inverse-fg); transition: opacity .12s, background .12s; white-space: nowrap;
   }
+
+  /* Lucide icons (the set Ghost's design system uses) — monochrome, inherit text colour */
+  .ico { width: 15px; height: 15px; flex-shrink: 0; stroke: currentColor; fill: none; }
+  .iconbtn .ico { width: 17px; height: 17px; }
   .btn:hover { background: #000; }
   .btn.ghost { background: var(--card); color: var(--ink-2); border-color: var(--line); }
   .btn.ghost:hover { background: var(--surface-subtle); border-color: var(--grey-2); }
@@ -599,6 +604,28 @@
 </head>
 <body>
 
+<!-- Lucide icon sprite (MIT, lucide-icons/lucide) — the icon set Ghost's design system uses. Managed by theme-sync/icons.svg. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true"
+     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <defs>
+    <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/></symbol>
+    <symbol id="i-message-circle" viewBox="0 0 24 24"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-zap" viewBox="0 0 24 24"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></symbol>
+    <symbol id="i-git-merge" viewBox="0 0 24 24"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></symbol>
+    <symbol id="i-printer" viewBox="0 0 24 24"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></symbol>
+    <symbol id="i-file-down" viewBox="0 0 24 24"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></symbol>
+    <symbol id="i-file-text" viewBox="0 0 24 24"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></symbol>
+    <symbol id="i-refresh-cw" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  </defs>
+</svg>
+
 <div class="app">
   <!-- Top bar -->
   <div class="topbar">
@@ -610,8 +637,8 @@
     <div class="spacer"></div>
     <button class="ai-badge hide" id="aiBadge" title="Local AI is active — click to manage"></button>
     <button class="acct-btn" id="btnSb" title="Sign in"><span class="acct-ava hide" id="acctAva"></span><span id="acctLabel">Sign in</span><span class="sync-dot hide" id="sbDot"></span></button>
-    <button class="iconbtn" id="btnExport" title="Download a local copy (JSON)">⤓</button>
-    <button class="iconbtn" id="btnImport" title="Restore from backup (JSON)">⤒</button>
+    <button class="iconbtn" id="btnExport" title="Download a local copy (JSON)"><svg class="ico"><use href="#i-download"/></svg></button>
+    <button class="iconbtn" id="btnImport" title="Restore from backup (JSON)"><svg class="ico"><use href="#i-upload"/></svg></button>
     <input type="file" id="fileImport" accept="application/json" class="hide">
   </div>
 
@@ -642,8 +669,8 @@
   <div id="tab-outreach">
     <div class="toolbar">
       <div style="font-size:0.84rem;color:var(--grey);flex:1">Ready-to-send notes for who matters today. Review, tweak, then send.</div>
-      <button class="btn ghost sm" id="btnPlanWeek">✨ Plan my week</button>
-      <button class="btn ghost sm" id="btnTemplates">✎ Templates</button>
+      <button class="btn ghost sm" id="btnPlanWeek"><svg class="ico"><use href="#i-sparkles"/></svg>Plan my week</button>
+      <button class="btn ghost sm" id="btnTemplates"><svg class="ico"><use href="#i-file-text"/></svg>Templates</button>
     </div>
     <div id="outreachWrap"></div>
   </div>
@@ -689,10 +716,10 @@
         <input type="text" id="searchInput" placeholder="Search members…">
       </div>
       <select class="filter" id="labelFilter"><option value="">All labels</option></select>
-      <button class="btn ghost" id="btnNeedsAttn" title="Show only people with something due or gone quiet">⚡ Needs attention</button>
-      <button class="btn ghost" id="btnDupes" title="Find and merge duplicate contacts">⧉ Merge duplicates</button>
-      <button class="btn ghost" id="btnLabels" title="Print address labels for the people shown below">🖨 Labels</button>
-      <button class="btn ghost" id="btnImportCsv">↧ Import CSV</button>
+      <button class="btn ghost" id="btnNeedsAttn" title="Show only people with something due or gone quiet"><svg class="ico"><use href="#i-zap"/></svg>Needs attention</button>
+      <button class="btn ghost" id="btnDupes" title="Find and merge duplicate contacts"><svg class="ico"><use href="#i-git-merge"/></svg>Merge duplicates</button>
+      <button class="btn ghost" id="btnLabels" title="Print address labels for the people shown below"><svg class="ico"><use href="#i-printer"/></svg>Labels</button>
+      <button class="btn ghost" id="btnImportCsv"><svg class="ico"><use href="#i-file-down"/></svg>Import CSV</button>
       <button class="btn" id="btnNewMember">+ New member</button>
     </div>
     <div class="table-wrap" id="tableWrap"></div>
@@ -1797,13 +1824,13 @@ function cardHTML(card){
       <textarea spellcheck="true">${escapeHTML(card.body)}</textarea>
     </div>
     <div class="out-actions">
-      <button class="btn ai-draft sm" data-act="draft" title="Let local AI write a personal opener from your history with them">✨ Draft</button>
-      <button class="btn email sm" data-act="email" ${hasEmail?"":"disabled"} title="${hasEmail?"Open a pre-filled Gmail compose":"No email on file"}">📧 Email</button>
-      <button class="btn wa sm" data-act="wa" ${hasWA?"":"disabled"} title="${hasWA?"Open WhatsApp with the message ready":"No phone number on file"}">💬 WhatsApp</button>
+      <button class="btn ai-draft sm" data-act="draft" title="Let local AI write a personal opener from your history with them"><svg class="ico"><use href="#i-sparkles"/></svg>Draft</button>
+      <button class="btn email sm" data-act="email" ${hasEmail?"":"disabled"} title="${hasEmail?"Open a pre-filled Gmail compose":"No email on file"}"><svg class="ico"><use href="#i-mail"/></svg>Email</button>
+      <button class="btn wa sm" data-act="wa" ${hasWA?"":"disabled"} title="${hasWA?"Open WhatsApp with the message ready":"No phone number on file"}"><svg class="ico"><use href="#i-message-circle"/></svg>WhatsApp</button>
       <span class="grow"></span>
       <button class="btn skip-btn sm" data-act="skip" title="Not reaching out — clear this without logging anything">Skip</button>
-      <button class="btn ghost sm" data-act="later" title="Snooze until tomorrow 9 AM">🕘 Later</button>
-      <button class="btn done sm" data-act="done">✓ Done</button>
+      <button class="btn ghost sm" data-act="later" title="Snooze until tomorrow 9 AM"><svg class="ico"><use href="#i-clock"/></svg>Later</button>
+      <button class="btn done sm" data-act="done"><svg class="ico"><use href="#i-check"/></svg>Done</button>
     </div>
   </div>`;
 }
@@ -1880,15 +1907,15 @@ async function outreachDraft(el, m, card){
   const btn = el.querySelector('[data-act="draft"]');
   // connect to local AI on demand (Ollama is instant; never auto-downloads the in-browser model)
   if(aiState!=="ready"){
-    btn.disabled = true; btn.textContent = "✨ connecting…";
+    btn.disabled = true; btn.innerHTML = '<svg class="ico"><use href="#i-sparkles"/></svg>connecting…';
     await enableAI();
-    btn.disabled = false; btn.textContent = "✨ Draft";
+    btn.disabled = false; btn.innerHTML = '<svg class="ico"><use href="#i-sparkles"/></svg>Draft';
   }
   if(aiState!=="ready"){ toast("Turn on local AI in the Inbox tab first (needs Ollama running)"); return; }
 
-  btn.disabled = true; btn.textContent = "✨ writing…";
+  btn.disabled = true; btn.innerHTML = '<svg class="ico"><use href="#i-sparkles"/></svg>writing…';
   const draft = await aiDraftMessage(m, card);
-  btn.disabled = false; btn.textContent = "✨ Draft";
+  btn.disabled = false; btn.innerHTML = '<svg class="ico"><use href="#i-sparkles"/></svg>Draft';
   if(!draft || !draft.message){ toast("AI couldn't draft that one — your text is unchanged"); return; }
 
   const ta = el.querySelector("textarea");
@@ -3318,16 +3345,20 @@ function openSb(){
   setTimeout(()=>{ const el=document.getElementById("sbEmail"); if(el && !signedIn) el.focus(); }, 50);
 }
 function closeSb(){ document.getElementById("sbModal").classList.remove("open"); }
-async function sbSignOut(){
+function sbSignOut(){
   if(!confirm("Sign out on this browser? Your cloud data stays safe.")) return;
-  try { if(sbClient) await sbClient.auth.signOut(); } catch(e){}
-  localStorage.removeItem("tribe_sb_session");
-  sbUser=null; sbState="off"; setSbDot("idle");
+  // clear the LOCAL session first so sign-out always works instantly — never block on the
+  // server call, which can hang (same cause as the sync hang).
+  const c = sbClient;
+  try { localStorage.removeItem("tribe_sb_session"); } catch(e){}
+  sbClient = null; sbUser = null; sbState = "off"; setSbDot("idle");
   ["sbEmail","sbCode"].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=""; });
   document.getElementById("sbCodeRow").classList.add("hide");
   document.getElementById("btnSbVerify").classList.add("hide");
   document.getElementById("btnSbSendCode").classList.remove("hide");
   updateSbUI(); openSb(); toast("Signed out");   // re-render modal to the sign-in view
+  // best-effort server-side revoke, fire-and-forget (do NOT await — it may hang)
+  try { if(c) c.auth.signOut({ scope:"local" }).catch(()=>{}); } catch(e){}
 }
 
 
