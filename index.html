@@ -72,6 +72,23 @@
     --accent:     var(--color-green-500);
     --accent-ink: var(--color-green-700);
     --blue:       var(--color-blue-500);
+
+    /* Amber shades not in the shared block (Ghost yellow ramp) */
+    --color-yellow-700: oklch(65.82% 0.1419 70.8);
+    --color-yellow-800: oklch(54.44% 0.1173 70.8);
+
+    /* Semantic state surfaces — all derived from Ghost's palette (no bespoke hexes) */
+    --ok-bg:        color-mix(in oklch, var(--color-green-500) 14%, transparent);
+    --ok-line:      color-mix(in oklch, var(--color-green-500) 34%, transparent);
+    --ok-ink:       var(--color-green-700);
+    --warn-bg:      color-mix(in oklch, var(--color-yellow-500) 18%, transparent);
+    --warn-line:    color-mix(in oklch, var(--color-yellow-500) 42%, transparent);
+    --warn-ink:     var(--color-yellow-800);
+    --warn-solid:   var(--color-yellow-700);
+    --warn-solid-h: var(--color-yellow-800);
+    --danger-bg:    color-mix(in oklch, var(--color-red-500) 12%, transparent);
+    --danger-line:  color-mix(in oklch, var(--color-red-500) 32%, transparent);
+    --danger-ink:   var(--color-red-500);
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -99,7 +116,7 @@
   }
   .logo {
     width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
-    background: linear-gradient(135deg, #167c2e, #30cf43);
+    background: linear-gradient(135deg, var(--color-green-700), var(--color-green-500));
     display: flex; align-items: center; justify-content: center;
     font-size: 1.2rem; box-shadow: var(--shadow-sm);
   }
@@ -122,8 +139,8 @@
   .acct-btn .sync-dot { top: 3px; right: 3px; }
   .sync-dot { position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 0 2px var(--card); }
   .sync-dot.ok { background: var(--accent); }
-  .sync-dot.syncing { background: #ca8a04; animation: aipulse 1s ease-in-out infinite; }
-  .sync-dot.fail { background: #dc2626; }
+  .sync-dot.syncing { background: var(--warn-solid); animation: aipulse 1s ease-in-out infinite; }
+  .sync-dot.fail { background: var(--danger-ink); }
   .sync-dot.pending { background: var(--grey-2); }
   .sync-dot.hide { display: none; }
 
@@ -176,12 +193,12 @@
   /* Lucide icons (the set Ghost's design system uses) — monochrome, inherit text colour */
   .ico { width: 15px; height: 15px; flex-shrink: 0; stroke: currentColor; fill: none; }
   .iconbtn .ico { width: 17px; height: 17px; }
-  .btn:hover { background: #000; }
+  .btn:hover { opacity: .88; }
   .btn.ghost { background: var(--card); color: var(--ink-2); border-color: var(--line); }
   .btn.ghost:hover { background: var(--surface-subtle); border-color: var(--grey-2); }
   .btn.sm { padding: 6px 11px; font-size: 0.8rem; }
-  .btn.danger { background: #fff; color: #dc2626; border-color: #f3c9c9; }
-  .btn.danger:hover { background: #fef2f2; }
+  .btn.danger { background: var(--card); color: var(--danger-ink); border-color: var(--danger-line); }
+  .btn.danger:hover { background: var(--danger-bg); }
 
   /* ── Table ── */
   .table-wrap { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
@@ -192,11 +209,11 @@
   .next-cell { white-space: nowrap; }
   .sig { font-size: 0.8rem; font-weight: 500; white-space: nowrap; }
   .sig.none { color: var(--grey-2); }
-  .sig.cold { color: #b45309; }
+  .sig.cold { color: var(--warn-ink); }
   .sig.urgent { color: var(--accent-ink); font-weight: 600; }
   .sig.soon { color: var(--ink-2); }
   .sig.far { color: var(--grey); }
-  .btn.ghost.active { border-color: var(--accent); color: var(--accent-ink); background: #f3fdf4; }
+  .btn.ghost.active { border-color: var(--accent); color: var(--accent-ink); background: var(--ok-bg); }
   table { width: 100%; border-collapse: collapse; }
   thead th {
     text-align: left; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
@@ -223,7 +240,7 @@
     display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 0.72rem; font-weight: 500;
     background: var(--chip-bg); color: var(--ink-2); margin: 1px 2px 1px 0;
   }
-  .pill.accent { background: #e7f9ea; color: var(--accent-ink); }
+  .pill.accent { background: var(--ok-bg); color: var(--accent-ink); }
 
   .empty {
     text-align: center; padding: 64px 20px; color: var(--grey);
@@ -253,12 +270,12 @@
 
   /* ── Inbox (capture) ── */
   .inbox-paste { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; box-shadow: var(--shadow-sm); margin-bottom: 18px; }
-  .inbox-paste.drag { border-color: var(--accent); background: #f6fdf7; }
+  .inbox-paste.drag { border-color: var(--accent); background: var(--ok-bg); }
   .inbox-paste textarea { width: 100%; min-height: 120px; border: none; outline: none; resize: vertical; font-family: inherit; font-size: 0.9rem; line-height: 1.5; color: var(--ink); background: transparent; }
   .inbox-bar { display: flex; align-items: center; gap: 10px; padding-top: 10px; border-top: 1px solid var(--line-soft); flex-wrap: wrap; }
   .inbox-bar .grow { flex: 1; }
   .inbox-status { font-size: 0.78rem; color: var(--grey); }
-  #btnInboxAI.ai-on { background: #f3fdf4; color: var(--accent-ink); border-color: #bfe6cd; }
+  #btnInboxAI.ai-on { background: var(--ok-bg); color: var(--accent-ink); border-color: var(--ok-line); }
   #aiModelSel { padding: 6px 8px; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--card); color: var(--ink-2); font-size: 0.8rem; outline: none; cursor: pointer; max-width: 160px; }
   #aiModelSel:hover { border-color: var(--grey-2); }
   .ix-section-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--grey); margin: 0 0 12px; }
@@ -267,7 +284,7 @@
   .ix-card.newc { border-style: dashed; }
   .ix-head { display: flex; align-items: center; gap: 11px; margin-bottom: 12px; }
   .ix-head .who { font-weight: 600; color: var(--ink); }
-  .ix-head .reason { font-size: 0.72rem; color: var(--accent-ink); background: #e7f9ea; padding: 2px 8px; border-radius: 20px; }
+  .ix-head .reason { font-size: 0.72rem; color: var(--accent-ink); background: var(--ok-bg); padding: 2px 8px; border-radius: 20px; }
   .ix-row { display: flex; align-items: flex-start; gap: 9px; margin-bottom: 8px; }
   .ix-row input[type=checkbox] { margin-top: 3px; flex-shrink: 0; }
   .ix-row label { font-size: 0.84rem; color: var(--ink-2); font-weight: 500; }
@@ -282,23 +299,23 @@
   /* ── Backup banner ── */
   .backup-banner {
     display: flex; align-items: center; gap: 10px; margin-bottom: 18px;
-    background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--radius);
-    padding: 10px 14px; font-size: 0.85rem; color: #92651a;
+    background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: var(--radius);
+    padding: 10px 14px; font-size: 0.85rem; color: var(--warn-ink);
   }
   .backup-banner .bb-icon { font-size: 1rem; }
-  .backup-banner .bb-msg { color: #92651a; }
+  .backup-banner .bb-msg { color: var(--warn-ink); }
   .backup-banner .grow { flex: 1; }
-  .backup-banner .btn.sm { background: #ca8a04; }
-  .backup-banner .btn.sm:hover { background: #a16207; }
-  .backup-banner .bb-x { border: none; background: none; color: #b78a3a; font-size: 0.9rem; cursor: pointer; padding: 4px; }
-  .backup-banner .bb-x:hover { color: #92651a; }
+  .backup-banner .btn.sm { background: var(--warn-solid); }
+  .backup-banner .btn.sm:hover { background: var(--warn-solid-h); }
+  .backup-banner .bb-x { border: none; background: none; color: var(--warn-ink); font-size: 0.9rem; cursor: pointer; padding: 4px; }
+  .backup-banner .bb-x:hover { color: var(--warn-ink); }
 
   /* ── CSV import ── */
   .csv-drop {
     border: 2px dashed var(--line); border-radius: 12px; padding: 32px 20px; text-align: center;
     color: var(--grey); cursor: pointer; transition: border-color .12s, background .12s;
   }
-  .csv-drop:hover, .csv-drop.drag { border-color: var(--accent); background: #f6fdf7; }
+  .csv-drop:hover, .csv-drop.drag { border-color: var(--accent); background: var(--ok-bg); }
   .csv-drop .big { font-size: 2rem; margin-bottom: 6px; }
   .csv-drop p { font-size: 0.88rem; }
   .csv-opts { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--line-soft); }
@@ -332,8 +349,8 @@
   .out-top .who { font-weight: 600; color: var(--ink); }
   .out-top .why { font-size: 0.8rem; color: var(--grey); }
   .out-top .when-pill { margin-left: auto; font-size: 0.72rem; font-weight: 600; padding: 3px 10px; border-radius: 20px; background: var(--chip-bg); color: var(--ink-2); white-space: nowrap; }
-  .out-card.today .when-pill { background: #e7f9ea; color: var(--accent-ink); }
-  .out-context { font-size: 0.8rem; color: var(--accent-ink); background: #f3fdf4; border: 1px solid #d6f0db; border-radius: 8px; padding: 7px 11px; margin-bottom: 10px; line-height: 1.45; }
+  .out-card.today .when-pill { background: var(--ok-bg); color: var(--accent-ink); }
+  .out-context { font-size: 0.8rem; color: var(--accent-ink); background: var(--ok-bg); border: 1px solid var(--ok-line); border-radius: 8px; padding: 7px 11px; margin-bottom: 10px; line-height: 1.45; }
   .out-draft { margin-bottom: 12px; }
   /* Channel buttons stay neutral (Ghost is near-monochrome) — the icon conveys the channel. */
   .btn.ai-draft, .btn.email, .btn.wa { background: var(--card); color: var(--ink-2); border-color: var(--line); }
@@ -353,8 +370,11 @@
   .btn.skip:hover { color: var(--grey); }
 
   /* ── Cloud backup ── */
-  .gh-warn { font-size: 0.78rem; line-height: 1.5; color: #92651a; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 12px; }
-  .gh-warn a { color: #a16207; }
+  .gh-warn { font-size: 0.78rem; line-height: 1.5; color: var(--warn-ink); background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: 8px; padding: 10px 12px; }
+  .sb-data { padding: 14px 20px; border-top: 1px solid var(--line); }
+  .sb-data-label { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--grey-2); margin-bottom: 8px; }
+  .sb-data-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+  .gh-warn a { color: var(--warn-solid-h); }
 
   /* ── Templates editor ── */
   .tpl-item { border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin-bottom: 10px; }
@@ -365,7 +385,7 @@
   .tpl-item .tpl-applies { max-width: 150px; }
   .tpl-item textarea { resize: vertical; min-height: 52px; margin-top: 6px; }
   .tpl-item .tpl-del { border: none; background: none; color: var(--grey-2); cursor: pointer; padding: 0 6px; font-size: 0.9rem; }
-  .tpl-item .tpl-del:hover { color: #dc2626; }
+  .tpl-item .tpl-del:hover { color: var(--danger-ink); }
   .tpl-voice-head { display: flex; align-items: baseline; gap: 8px; }
   .tpl-voice-head strong { font-size: 0.9rem; color: var(--ink); }
 
@@ -462,7 +482,7 @@
   .ml-row .ml-in { flex: 1; min-width: 0; }
   .ml-row .ml-wa-lbl { display: inline-flex; align-items: center; gap: 4px; font-size: 0.76rem; color: var(--grey); white-space: nowrap; cursor: pointer; }
   .ml-row .ml-wa-lbl input { width: auto; margin: 0; }
-  .ml-row .ml-primary { display: none; font-size: 0.68rem; font-weight: 600; color: var(--accent, #16a34a); background: #e7f9ea; padding: 2px 7px; border-radius: 20px; white-space: nowrap; }
+  .ml-row .ml-primary { display: none; font-size: 0.68rem; font-weight: 600; color: var(--accent); background: var(--ok-bg); padding: 2px 7px; border-radius: 20px; white-space: nowrap; }
   .ml-row.is-primary .ml-primary { display: inline-block; }
   .ml-row.is-primary .ml-star { display: none; }
   .ml-row .ml-star, .ml-row .ml-rm { border: none; background: none; cursor: pointer; color: var(--grey); font-size: 0.95rem; line-height: 1; padding: 2px 4px; border-radius: 6px; }
@@ -483,7 +503,7 @@
   .dl-yr  { flex: 0 0 74px; }
   .dl-rec { flex: 1 1 96px; }
   .dl-row .dl-rm { border: none; background: none; color: var(--grey-2); font-size: 0.95rem; padding: 0 4px; cursor: pointer; }
-  .dl-row .dl-rm:hover { color: #dc2626; }
+  .dl-row .dl-rm:hover { color: var(--danger-ink); }
 
   /* ── Drawer detail tabs ── */
   .drawer-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin: -4px 0 18px; }
@@ -498,7 +518,7 @@
   .act-add select, .act-add input[type=text] { padding: 7px 9px; border: 1px solid var(--line); border-radius: 7px; outline: none; font-size: 0.83rem; background: var(--card); color: var(--ink); width: 100%; }
   .act-add select:focus, .act-add input:focus { border-color: var(--grey-2); }
   .act-add .act-add-btn { padding: 7px 12px; border-radius: 7px; border: 1px solid var(--line); background: var(--ink); color: var(--inverse-fg); font-size: 0.82rem; font-weight: 600; white-space: nowrap; }
-  .act-add .act-add-btn:hover { background:#000; }
+  .act-add .act-add-btn:hover { opacity: .88; }
   .act-add-date { grid-column: 1 / -1; }
   .act-add-date input[type=date] { padding: 6px 9px; border: 1px solid var(--line); border-radius: 7px; outline: none; font-size: 0.8rem; color: var(--grey); background: var(--card); }
   .act-list { display: flex; flex-direction: column; }
@@ -511,7 +531,7 @@
   .act-row .act-meta { font-size: 0.74rem; color: var(--grey-2); margin-top: 1px; }
   .act-row .act-del { border: none; background: none; color: var(--grey-2); cursor: pointer; font-size: 0.82rem; opacity: 0; transition: opacity .1s; padding: 0 2px; align-self: center; }
   .act-row:hover .act-del { opacity: 1; }
-  .act-row .act-del:hover { color: #dc2626; }
+  .act-row .act-del:hover { color: var(--danger-ink); }
 
   /* ── Modal ── */
   .modal-scrim { position: fixed; inset: 0; background: rgba(20,23,26,0.4); display: none; align-items: center; justify-content: center; z-index: 60; padding: 20px; }
@@ -530,18 +550,18 @@
     transition: all .12s; font-size: 0.74rem; color: var(--ink-2);
   }
   .type-opt:hover { border-color: var(--grey-2); }
-  .type-opt.sel { border-color: var(--accent); background: #f3fdf4; color: var(--accent-ink); font-weight: 600; }
+  .type-opt.sel { border-color: var(--accent); background: var(--ok-bg); color: var(--accent-ink); font-weight: 600; }
   .type-opt .ico { font-size: 1.1rem; display: block; margin-bottom: 3px; }
 
   .ai-badge {
     display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px;
-    border: 1px solid #bfe6cd; background: #f3fdf4; color: var(--accent-ink);
+    border: 1px solid var(--ok-line); background: var(--ok-bg); color: var(--accent-ink);
     border-radius: 20px; font-size: 0.78rem; font-weight: 600; cursor: pointer;
     max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background .12s;
   }
-  .ai-badge:hover { background: #e7f9ea; }
+  .ai-badge:hover { background: var(--ok-bg); }
   .ai-badge .ai-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
-  .ai-badge .ai-dot.loading { background: #ca8a04; animation: aipulse 1s ease-in-out infinite; }
+  .ai-badge .ai-dot.loading { background: var(--warn-solid); animation: aipulse 1s ease-in-out infinite; }
   @keyframes aipulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
   .toast {
@@ -571,7 +591,7 @@
   .ask-msg.bot .ask-title { font-weight: 600; color: var(--ink); margin-bottom: 8px; }
   .ask-results { display: flex; flex-wrap: wrap; gap: 6px; }
   .ask-chip { display: inline-flex; align-items: center; gap: 7px; background: var(--surface-subtle); border-radius: 20px; padding: 3px 10px 3px 3px; font-size: 0.82rem; color: var(--ink-2); cursor: pointer; }
-  .ask-chip:hover { background: #e7f9ea; color: var(--accent-ink); }
+  .ask-chip:hover { background: var(--ok-bg); color: var(--accent-ink); }
   .ask-chip .avatar { width: 22px; height: 22px; font-size: 0.62rem; }
   .ask-actions { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
   .ask-input { display: flex; gap: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
@@ -579,15 +599,15 @@
   .ask-input input:focus { border-color: var(--grey-2); }
 
   /* ── Address labels ── */
-  .lp-overlay { position: fixed; inset: 0; z-index: 90; background: #e9ecef; display: flex; flex-direction: column; }
+  .lp-overlay { position: fixed; inset: 0; z-index: 90; background: var(--color-grey-100); display: flex; flex-direction: column; }
   .lp-controls { display: flex; align-items: center; gap: 12px; padding: 12px 18px; background: var(--card); border-bottom: 1px solid var(--line); box-shadow: var(--shadow-sm); }
   .lp-controls .grow { flex: 1; }
   .lp-scroll { flex: 1; overflow: auto; padding: 24px; display: flex; justify-content: center; }
   .lp-sheet { background: #fff; box-shadow: var(--shadow-md); display: grid; align-content: start; }
-  .lp-cell { overflow: hidden; box-sizing: border-box; padding: 4mm 5mm; break-inside: avoid; outline: 1px dashed #d0d4d9; }
+  .lp-cell { overflow: hidden; box-sizing: border-box; padding: 4mm 5mm; break-inside: avoid; outline: 1px dashed var(--color-grey-300); }
   .lp-cell .lp-name { font-weight: 700; }
-  .lp-cell .lp-co { color: #333; }
-  .lp-cell .lp-addr { white-space: pre-line; color: #222; }
+  .lp-cell .lp-co { color: var(--color-grey-900); }
+  .lp-cell .lp-addr { white-space: pre-line; color: var(--text-primary); }
 
   @media print {
     body > *:not(#labelPrint):not(#lpStyle) { display: none !important; }
@@ -633,10 +653,7 @@
     </div>
     <div class="spacer"></div>
     <button class="ai-badge hide" id="aiBadge" title="Local AI is active — click to manage"></button>
-    <button class="acct-btn" id="btnSb" title="Sign in"><span class="acct-ava hide" id="acctAva"></span><span id="acctLabel">Sign in</span><span class="sync-dot hide" id="sbDot"></span></button>
-    <button class="iconbtn" id="btnExport" title="Download a local copy (JSON)"><svg class="ico"><use href="#i-download"/></svg></button>
-    <button class="iconbtn" id="btnImport" title="Restore from backup (JSON)"><svg class="ico"><use href="#i-upload"/></svg></button>
-    <input type="file" id="fileImport" accept="application/json" class="hide">
+    <button class="acct-btn" id="btnSb" title="Account, cloud sync & backup"><span class="acct-ava hide" id="acctAva"></span><span id="acctLabel">Sign in</span><span class="sync-dot hide" id="sbDot"></span></button>
   </div>
 
   <!-- Backup nudge -->
@@ -947,6 +964,15 @@
       <div class="form-group"><label>Email</label><input type="email" id="sbEmail" placeholder="you@example.com" autocomplete="email"></div>
       <div class="form-group hide" id="sbCodeRow"><label>6-digit code from your email</label><input type="text" id="sbCode" inputmode="numeric" placeholder="123456" autocomplete="one-time-code"></div>
       <div class="gh-warn">🔒 No password needed — we email you a one-time sign-in link &amp; code. Enter the code here, <em>or</em> just click the link in the email. Your data stays private to your account.</div>
+    </div>
+    <div class="sb-data">
+      <div class="sb-data-label">Local backup &amp; restore</div>
+      <div class="sb-data-row">
+        <button class="btn ghost sm" id="btnExport"><svg class="ico"><use href="#i-download"/></svg>Download backup</button>
+        <button class="btn ghost sm" id="btnImport"><svg class="ico"><use href="#i-upload"/></svg>Restore…</button>
+        <input type="file" id="fileImport" accept="application/json" class="hide">
+      </div>
+      <div class="hint">A full .json snapshot of everything (people, companies, fields, settings). Restore <strong>replaces</strong> all current data.</div>
     </div>
     <div class="modal-foot">
       <button class="btn danger sm hide" id="btnSbSignout" style="margin-right:auto">Sign out</button>
@@ -2575,7 +2601,7 @@ window.openMember = function(id){
 
   const body = document.getElementById("drawerBody");
   const fieldsHtml = sortedFields().map(f=>{
-    const req = f.required ? ` <span style="color:#dc2626">*</span>` : "";
+    const req = f.required ? ` <span style="color:var(--danger-ink)">*</span>` : "";
     const hint = f.type==="datelist" ? ` <span class="hint">· recurring & future dates show in Upcoming</span>` : "";
     return `<div class="form-group">
       <label>${escapeHTML(f.label)}${req}${hint}</label>
@@ -3107,7 +3133,7 @@ function importData(file){
     try {
       const d = JSON.parse(e.target.result);
       if(!d.fields || !d.members) throw new Error("bad");
-      if(!confirm("Replace all current data with this backup?")) return;
+      if(!confirm(`Restore from backup?\n\nThis REPLACES everything currently in Tribe — ${db.members.length} member(s), companies, fields and settings — with the contents of this file. It can't be undone.`)) return;
       db = migrate(d); save(); backupDismissed=false; renderAll(); toast("Data imported");
     } catch(err){ toast("Couldn't read that file"); }
   };
