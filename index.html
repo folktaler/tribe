@@ -335,8 +335,9 @@
   .out-card.today .when-pill { background: #e7f9ea; color: var(--accent-ink); }
   .out-context { font-size: 0.8rem; color: var(--accent-ink); background: #f3fdf4; border: 1px solid #d6f0db; border-radius: 8px; padding: 7px 11px; margin-bottom: 10px; line-height: 1.45; }
   .out-draft { margin-bottom: 12px; }
-  .btn.ai-draft { background: #f5f3ff; color: #6d28d9; border-color: #ddd6fe; }
-  .btn.ai-draft:hover { background: #ede9fe; }
+  /* Channel buttons stay neutral (Ghost is near-monochrome) — the icon conveys the channel. */
+  .btn.ai-draft, .btn.email, .btn.wa { background: var(--card); color: var(--ink-2); border-color: var(--line); }
+  .btn.ai-draft:hover, .btn.email:hover, .btn.wa:hover { background: var(--surface-subtle); border-color: var(--grey-2); }
   .btn.ai-draft[disabled] { opacity: 0.6; pointer-events: none; }
   .out-draft .subj { width: 100%; padding: 7px 10px; border: 1px solid var(--line); border-radius: 7px; margin-bottom: 6px; outline: none; font-size: 0.84rem; color: var(--ink); }
   .out-draft .subj:focus, .out-draft textarea:focus { border-color: var(--grey-2); }
@@ -344,10 +345,6 @@
   .out-draft textarea { width: 100%; min-height: 64px; padding: 9px 11px; border: 1px solid var(--line); border-radius: var(--radius-control); outline: none; resize: vertical; color: var(--ink); font-size: 0.88rem; line-height: 1.5; background: var(--surface-subtle); }
   .out-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .out-actions .grow { flex: 1; }
-  .btn.email { background: #fff; color: #c2410c; border-color: #f1d4c4; }
-  .btn.email:hover { background: #fff7ed; }
-  .btn.wa { background: #fff; color: #128c4a; border-color: #bfe6cd; }
-  .btn.wa:hover { background: #f0fdf4; }
   .btn.email[disabled], .btn.wa[disabled] { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
   .btn.skip-btn { background: transparent; border-color: transparent; color: var(--grey-2); }
   .btn.skip-btn:hover { color: var(--grey); background: var(--surface-subtle); }
@@ -719,8 +716,9 @@
       <button class="btn ghost" id="btnNeedsAttn" title="Show only people with something due or gone quiet"><svg class="ico"><use href="#i-zap"/></svg>Needs attention</button>
       <button class="btn ghost" id="btnDupes" title="Find and merge duplicate contacts"><svg class="ico"><use href="#i-git-merge"/></svg>Merge duplicates</button>
       <button class="btn ghost" id="btnLabels" title="Print address labels for the people shown below"><svg class="ico"><use href="#i-printer"/></svg>Labels</button>
-      <button class="btn ghost" id="btnImportCsv"><svg class="ico"><use href="#i-file-down"/></svg>Import CSV</button>
-      <button class="btn" id="btnNewMember">+ New member</button>
+      <button class="btn ghost" id="btnImportCsv" title="Add contacts from a CSV or vCard — merges, skips duplicates"><svg class="ico"><use href="#i-file-down"/></svg>Import</button>
+      <button class="btn ghost" id="btnExportCsv" title="Export the people currently shown as a CSV"><svg class="ico"><use href="#i-download"/></svg>Export</button>
+      <button class="btn" id="btnNewMember"><svg class="ico"><use href="#i-plus"/></svg>New member</button>
     </div>
     <div class="table-wrap" id="tableWrap"></div>
   </div>
@@ -3141,12 +3139,24 @@ function sbOn(){ return sbState==="ready" && sbClient && sbUser; }
 
 function setSbStatus(t){ const el=document.getElementById("sbStatus"); if(el) el.textContent=t; }
 let sbDotState = "idle";
+let sbLastSync = parseInt(localStorage.getItem("tribe_sb_lastsync") || "0", 10) || 0;
+function markSynced(){ sbLastSync = Date.now(); try { localStorage.setItem("tribe_sb_lastsync", String(sbLastSync)); } catch(e){} }
+function relTime(ms){
+  if(!ms) return "never";
+  const s = Math.round((Date.now()-ms)/1000);
+  if(s < 45) return "just now";
+  const m = Math.round(s/60); if(m < 60) return m + " min ago";
+  const h = Math.round(m/60); if(h < 24) return h + (h===1?" hour":" hours") + " ago";
+  const d = Math.round(h/24); if(d < 7) return d + (d===1?" day":" days") + " ago";
+  return new Date(ms).toLocaleDateString();
+}
 function sbStateLine(){
-  return sbDotState==="ok" ? "✓ Synced to the cloud — your data is safe."
-    : sbDotState==="syncing" ? "Syncing to the cloud…"
-    : sbDotState==="fail" ? "⚠ Sync failed — tap Sync now to retry."
-    : sbDotState==="pending" ? "Offline — saved on this device, will sync when you reconnect."
-    : "Signed in.";
+  const last = sbLastSync ? ` · last backup ${relTime(sbLastSync)}` : "";
+  return sbDotState==="ok" ? `✓ Backed up to the cloud${sbLastSync ? " "+relTime(sbLastSync) : ""}.`
+    : sbDotState==="syncing" ? "Backing up to the cloud…"
+    : sbDotState==="fail" ? `⚠ Last sync failed — tap Sync now to retry${sbLastSync ? ` (last good ${relTime(sbLastSync)})` : ""}.`
+    : sbDotState==="pending" ? `Offline — saved on this device, will back up when you reconnect${last}.`
+    : `Signed in${last}.`;
 }
 function setSbDot(s){
   sbDotState = s;
@@ -3267,6 +3277,7 @@ async function sbPush(){
   const { error } = await sbClient.from("tribe_data").upsert({ user_id: sbUser.id, data: JSON.stringify(db), updated_at: new Date().toISOString() });
   if(error) throw error;
   lastSbSnapshot = JSON.stringify(db);
+  markSynced();
   return true;
 }
 function scheduleSupabaseSync(){
@@ -3319,9 +3330,10 @@ async function syncNow(){
     clearTimeout(killer);
     if(error) throw error;
     lastSbSnapshot = payload;
+    markSynced();
     const secs = ((performance.now()-t0)/1000).toFixed(1);
     setSbDot("ok");
-    setSbStatus(`Signed in as ${sbUser.email} · ✓ Synced ${mb} MB in ${secs}s.`);
+    setSbStatus(`Signed in as ${sbUser.email} · ✓ Backed up ${mb} MB just now.`);
   } catch(e){
     clearTimeout(killer);
     const secs = ((performance.now()-t0)/1000).toFixed(1);
@@ -3648,6 +3660,35 @@ function doImport(){
   toast(msg);
 }
 
+// Export the people currently shown (respects search/filters) to a CSV that round-trips with Import.
+function exportMembersCSV(){
+  const rows = db.members.filter(memberMatches).sort(compareMembers);
+  if(!rows.length){ toast("No members in the current view to export"); return; }
+  const maxE = Math.max(1, ...rows.map(m=>emailsOf(m).length));
+  const maxP = Math.max(1, ...rows.map(m=>phonesOf(m).length));
+  const headers = ["Name"];
+  for(let i=0;i<maxE;i++) headers.push("Email "+(i+1));
+  for(let i=0;i<maxP;i++) headers.push("Phone "+(i+1));
+  headers.push("Company","Labels","Birthday","Last contacted","Notes");
+  const esc = v => { v = String(v==null?"":v); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; };
+  const lines = [headers.map(esc).join(",")];
+  rows.forEach(m=>{
+    const em = emailsOf(m), ph = phonesOf(m);
+    const bday = (m.data.dates||[]).find(d=>d && /birthday/i.test(d.type||""));
+    const cells = [ memberName(m) ];
+    for(let i=0;i<maxE;i++) cells.push(em[i]||"");
+    for(let i=0;i<maxP;i++) cells.push(ph[i]?ph[i].num:"");
+    cells.push(companyName(m.data.company), (m.data.labels||[]).join("; "), bday?bday.date:"", lastContactISO(m)||"", m.data.notes||"");
+    lines.push(cells.map(esc).join(","));
+  });
+  const blob = new Blob([lines.join("\n")], { type:"text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "tribe-members-"+isoLocal(new Date())+".csv";
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  toast(`Exported ${rows.length} member${rows.length===1?"":"s"} to CSV`);
+}
+
 /* ───────────────────────── Samples ───────────────────────── */
 window.loadSamples = function(){
   const t = todayMidnight();
@@ -3764,6 +3805,7 @@ document.getElementById("lpAddrSrc").onchange = renderLabels;
 document.getElementById("lpPrintBtn").onclick = ()=> window.print();
 
 document.getElementById("btnImportCsv").onclick = openCsv;
+document.getElementById("btnExportCsv").onclick = exportMembersCSV;
 document.getElementById("btnCancelCsv").onclick = closeCsv;
 document.getElementById("btnDoImport").onclick = doImport;
 document.getElementById("csvModal").onclick = e=>{ if(e.target.id==="csvModal") closeCsv(); };
