@@ -3302,24 +3302,34 @@ function flushSync(){
   } else { sbInit(); }
 }
 
-// manual sync — force a push and report the outcome in the panel (works on PWA/touch, no hover needed)
+// manual sync — diagnostic-grade: aborts at 15s & reports the EXACT outcome in the panel (no console needed)
 async function syncNow(){
   if(!sbOn()){ setSbStatus("Sign in first to sync."); return; }
   if(!navigator.onLine){ setSbDot("pending"); return; }
-  const mb = (JSON.stringify(db).length/1048576).toFixed(1);
+  const payload = JSON.stringify(db);
+  const mb = (payload.length/1048576).toFixed(1);
   setSbDot("syncing"); setSbStatus(`Syncing ${mb} MB to the cloud…`);
   const t0 = performance.now();
+  const ctrl = new AbortController();
+  const killer = setTimeout(()=>ctrl.abort(), 15000);   // hard-stop a hung request
   try {
-    await Promise.race([
-      sbPush(),
-      new Promise((_,rej)=>setTimeout(()=>rej(new Error("timed out (25s). The request hung — close any OTHER open Tribe tab/window, then try again.")), 25000))
-    ]);
+    const { error } = await sbClient.from("tribe_data")
+      .upsert({ user_id: sbUser.id, data: payload, updated_at: new Date().toISOString() })
+      .abortSignal(ctrl.signal);
+    clearTimeout(killer);
+    if(error) throw error;
+    lastSbSnapshot = payload;
     const secs = ((performance.now()-t0)/1000).toFixed(1);
     setSbDot("ok");
     setSbStatus(`Signed in as ${sbUser.email} · ✓ Synced ${mb} MB in ${secs}s.`);
   } catch(e){
+    clearTimeout(killer);
+    const secs = ((performance.now()-t0)/1000).toFixed(1);
     setSbDot("fail");
-    setSbStatus("⚠ Sync failed: " + sbErrText(e));
+    const hung = e && (e.name==="AbortError" || /abort/i.test(e.message||""));
+    setSbStatus(hung
+      ? `⚠ Request HUNG (aborted at ${secs}s) — the call never responded. Auth/network issue, NOT your data or permissions.`
+      : `⚠ Sync failed in ${secs}s: ${e.message || e.error_description || e.code || JSON.stringify(e)}`);
   }
 }
 
