@@ -371,9 +371,12 @@
 
   /* ── Cloud backup ── */
   .gh-warn { font-size: 0.78rem; line-height: 1.5; color: var(--warn-ink); background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: 8px; padding: 10px 12px; }
-  .sb-data { padding: 14px 20px; border-top: 1px solid var(--line); }
-  .sb-data-label { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--grey-2); margin-bottom: 8px; }
   .sb-data-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+  .set-mod { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .set-mod + .set-mod { margin-top: 12px; }
+  .set-mod-h { display: flex; align-items: center; gap: 9px; padding: 12px 14px; font-size: 0.9rem; font-weight: 600; color: var(--ink); background: var(--surface-subtle); border-bottom: 1px solid var(--line); }
+  .set-mod-h .ico { width: 17px; height: 17px; color: var(--grey-2); }
+  .set-mod-body { padding: 14px; }
   .gh-warn a { color: var(--warn-solid-h); }
 
   /* ── Templates editor ── */
@@ -635,6 +638,8 @@
     <symbol id="i-printer" viewBox="0 0 24 24"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></symbol>
     <symbol id="i-file-down" viewBox="0 0 24 24"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></symbol>
     <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></symbol>
     <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></symbol>
     <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></symbol>
     <symbol id="i-file-text" viewBox="0 0 24 24"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></symbol>
@@ -653,6 +658,7 @@
     </div>
     <div class="spacer"></div>
     <button class="ai-badge hide" id="aiBadge" title="Local AI is active — click to manage"></button>
+    <button class="iconbtn" id="btnSettings" title="Settings" aria-label="Settings"><svg class="ico"><use href="#i-settings"/></svg></button>
     <button class="acct-btn" id="btnSb" title="Account, cloud sync & backup"><span class="acct-ava hide" id="acctAva"></span><span id="acctLabel">Sign in</span><span class="sync-dot hide" id="sbDot"></span></button>
   </div>
 
@@ -965,21 +971,38 @@
       <div class="form-group hide" id="sbCodeRow"><label>6-digit code from your email</label><input type="text" id="sbCode" inputmode="numeric" placeholder="123456" autocomplete="one-time-code"></div>
       <div class="gh-warn">🔒 No password needed — we email you a one-time sign-in link &amp; code. Enter the code here, <em>or</em> just click the link in the email. Your data stays private to your account.</div>
     </div>
-    <div class="sb-data">
-      <div class="sb-data-label">Local backup &amp; restore</div>
-      <div class="sb-data-row">
-        <button class="btn ghost sm" id="btnExport"><svg class="ico"><use href="#i-download"/></svg>Download backup</button>
-        <button class="btn ghost sm" id="btnImport"><svg class="ico"><use href="#i-upload"/></svg>Restore…</button>
-        <input type="file" id="fileImport" accept="application/json" class="hide">
-      </div>
-      <div class="hint">A full .json snapshot of everything (people, companies, fields, settings). Restore <strong>replaces</strong> all current data.</div>
-    </div>
     <div class="modal-foot">
       <button class="btn danger sm hide" id="btnSbSignout" style="margin-right:auto">Sign out</button>
       <button class="btn ghost" id="btnSbClose">Close</button>
       <button class="btn ghost hide" id="btnSbSyncNow">Sync now</button>
       <button class="btn" id="btnSbSendCode">Email me a code</button>
       <button class="btn hide" id="btnSbVerify">Sign in</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Settings ── -->
+<div class="modal-scrim" id="settingsModal">
+  <div class="modal" style="width:500px">
+    <div class="modal-head">
+      <h2>Settings</h2>
+      <p>Manage your data, fields, templates &amp; AI.</p>
+    </div>
+    <div class="modal-body">
+      <section class="set-mod">
+        <div class="set-mod-h"><svg class="ico"><use href="#i-database"/></svg>Backup &amp; data</div>
+        <div class="set-mod-body">
+          <div class="sb-data-row">
+            <button class="btn ghost sm" id="btnExport"><svg class="ico"><use href="#i-download"/></svg>Download backup</button>
+            <button class="btn ghost sm" id="btnImport"><svg class="ico"><use href="#i-upload"/></svg>Restore…</button>
+            <input type="file" id="fileImport" accept="application/json" class="hide">
+          </div>
+          <div class="hint">A full .json snapshot of everything (people, companies, fields, settings). Restore <strong>replaces</strong> all current data. Your live backup is the cloud — sign in from the account menu.</div>
+        </div>
+      </section>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" id="btnSettingsClose">Close</button>
     </div>
   </div>
 </div>
@@ -3808,6 +3831,9 @@ document.getElementById("btnSbSyncNow").onclick = syncNow;
 document.getElementById("btnSbSignout").onclick = sbSignOut;
 document.getElementById("sbModal").onclick = e=>{ if(e.target.id==="sbModal") closeSb(); };
 document.getElementById("sbCode").addEventListener("keydown", e=>{ if(e.key==="Enter") sbVerifyCode(); });
+document.getElementById("btnSettings").onclick = ()=>document.getElementById("settingsModal").classList.add("open");
+document.getElementById("btnSettingsClose").onclick = ()=>document.getElementById("settingsModal").classList.remove("open");
+document.getElementById("settingsModal").onclick = e=>{ if(e.target.id==="settingsModal") e.currentTarget.classList.remove("open"); };
 document.getElementById("sbEmail").addEventListener("keydown", e=>{ if(e.key==="Enter" && !sbOn()) sbSendCode(); });
 
 document.getElementById("btnNeedsAttn").onclick = (e)=>{
